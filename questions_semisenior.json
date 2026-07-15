@@ -1,0 +1,1296 @@
+{
+  "studyData": [
+    {
+      "category": "System Architecture",
+      "icon": "layers",
+      "color": "var(--violet)",
+      "questions": [
+        {
+          "q": "What is Layered Architecture in .NET applications?",
+          "a": "Layered Architecture organizes code into logical layers, each with specific responsibilities:\n\n* **Presentation Layer:** Handles UI/API endpoints (Controllers, Razor Pages).\n* **Business Logic Layer (BLL):** Contains business rules and calculations.\n* **Data Access Layer (DAL):** Interacts with database (Repositories, EF Core context).\n\nThis separation of concerns makes testing and maintaining the application much easier."
+        },
+        {
+          "q": "What is Constructor Injection and how is it used in .NET?",
+          "a": "Constructor Injection is the most common way to implement Dependency Injection in .NET. Dependencies are declared as parameters in a class constructor, and the .NET runtime automatically provides the concrete implementations when creating the class instance.\n\n**Example:**\n```csharp\npublic class OrderService {\n    private readonly IOrderRepository _repository;\n    public OrderService(IOrderRepository repository) {\n        _repository = repository;\n    }\n}\n```"
+        },
+        {
+          "q": "What is the difference between a Web API and MVC in ASP.NET Core?",
+          "a": "* **ASP.NET Core MVC:** Uses Controllers and Views (HTML templates) to render web pages on the server side. Returns HTML markup.\n* **ASP.NET Core Web API:** Focuses on exposing endpoint data contracts (typically JSON/XML) to client-side applications (React, Angular, Mobile). Returns serialization models instead of HTML pages."
+        },
+        {
+          "q": "What is the purpose of Data Transfer Objects (DTOs)?",
+          "a": "DTOs are used to transfer data between different layers of an application (e.g. from the database to the API client) without exposing internal database entities. This prevents security issues (like over-posting), reduces network payload size, and decouples the API contract from the database schema."
+        },
+        {
+          "q": "What is the Repository Pattern?",
+          "a": "The Repository Pattern encapsulates data access logic behind an abstraction (an interface). This hides database-specific query logic (such as SQL statements or EF Core methods) from the business logic layer, making it easier to switch database technologies or mock database calls during unit testing."
+        },
+        {
+          "q": "What is Inversion of Control (IoC)?",
+          "a": "Inversion of Control (IoC) is a design principle where the control of object creation and flow of execution is transferred from the application code to a framework or container. Instead of a class creating its own dependencies using the `new` keyword, the framework creates and provides them."
+        },
+        {
+          "q": "What is the difference between monolithic and microservice architectures?",
+          "a": "* **Monolith:** All modules and functionalities are built, deployed, and run as a single unit. It is easy to develop and deploy, but scaling individual parts is hard.\n* **Microservices:** The application is split into small, independent services that communicate over a network. Each service is deployed separately, but managing deployments and data consistency is more complex."
+        },
+        {
+          "q": "What is the role of AppSettings.json in ASP.NET Core?",
+          "a": "`appsettings.json` is the default configuration file for storing application settings like database connection strings, external API keys, logging levels, and custom settings. These values are read at startup and can be injected into classes using the `IConfiguration` interface."
+        },
+        {
+          "q": "Explain the difference between coupling and cohesion.",
+          "a": "* **Cohesion:** How closely related and focused the responsibilities of a single class or module are. High cohesion is preferred.\n* **Coupling:** How dependent different classes or modules are on each other. Low coupling is preferred because changes in one module won't break others."
+        },
+        {
+          "q": "What is the Open-Closed Principle (OCP) in SOLID?",
+          "a": "The Open-Closed Principle states that software entities (classes, modules, functions) should be open for extension but closed for modification. This means you should be able to add new functionality (extension) by writing new code instead of changing existing, working code (modification), typically achieved using interfaces and polymorphism."
+        },
+        {
+          "q": "What is the Single Responsibility Principle (SRP)?",
+          "a": "The SRP states that a class should have only one reason to change — it should be responsible for only one part of the functionality. For example, a `UserService` class should not also handle email sending; that belongs in a separate `EmailService`."
+        },
+        {
+          "q": "What is the Liskov Substitution Principle (LSP)?",
+          "a": "LSP states that objects of a derived class must be substitutable for objects of the base class without altering program correctness. In practice, if you have a method that accepts a `Shape` base type, it must work correctly for any subclass like `Circle` or `Rectangle`."
+        },
+        {
+          "q": "What is the Interface Segregation Principle (ISP)?",
+          "a": "ISP states that clients should not be forced to depend on methods they do not use. Instead of one large interface, prefer many small, focused interfaces. For example, split `IWorker` into `IWorkable` and `IFeedable` so that a robot class doesn't have to implement `Feed()`."
+        },
+        {
+          "q": "What is the Dependency Inversion Principle (DIP)?",
+          "a": "DIP states that high-level modules should not depend on low-level modules; both should depend on abstractions (interfaces). For example, `OrderService` should depend on `IOrderRepository` (interface), not directly on `SqlOrderRepository` (concrete class)."
+        },
+        {
+          "q": "What are the three most common service lifetimes in ASP.NET Core DI?",
+          "a": "* **Transient:** A new instance is created every time the service is requested. Ideal for lightweight, stateless services.\n* **Scoped:** One instance per HTTP request. Ideal for services that hold state within a single request, like `DbContext`.\n* **Singleton:** One instance for the entire application lifetime. Ideal for caching or configuration helpers."
+        },
+        {
+          "q": "What is a Service Locator pattern and why is it considered an anti-pattern?",
+          "a": "A Service Locator is a class that resolves dependencies by calling a static registry. It is an anti-pattern because it hides dependencies (making the class hard to test), violates the Dependency Inversion Principle, and creates global mutable state."
+        },
+        {
+          "q": "What is the Mediator Pattern and how does MediatR implement it in .NET?",
+          "a": "The Mediator Pattern reduces direct dependencies between components by routing all communication through a central mediator object. In .NET, MediatR allows sending Commands and Queries as messages to handlers, decoupling the sender from the receiver and keeping controllers thin."
+        },
+        {
+          "q": "What is the Decorator Pattern and how is it used in .NET?",
+          "a": "The Decorator Pattern dynamically adds behaviour to an object without modifying its class. In .NET, you wrap an existing implementation in another class implementing the same interface:\n\n```csharp\npublic class LoggingRepository : IOrderRepository {\n    private readonly IOrderRepository _inner;\n    // Delegate to _inner, then log\n}\n```"
+        },
+        {
+          "q": "What is Separation of Concerns (SoC)?",
+          "a": "Separation of Concerns is the principle of dividing a program into distinct sections, where each section addresses a separate concern (responsibility). For example, keeping HTML in views, routing in controllers, and database access in repositories keeps each file focused and maintainable."
+        },
+        {
+          "q": "What is the difference between Abstract Classes and Interfaces in C#?",
+          "a": "* **Interface:** Defines a contract (what a class must do). Supports multiple inheritance. Cannot contain instance fields.\n* **Abstract Class:** Can define both contracts and shared implementations. Supports only single inheritance. Use abstract classes when subclasses share common code; use interfaces when you need to define capabilities across unrelated types."
+        },
+        {
+          "q": "What is the Factory Pattern and when should you use it?",
+          "a": "The Factory Pattern provides a method or class responsible for creating objects instead of using `new` directly. Use it when object creation is complex, involves conditional logic, or when the exact type to instantiate is determined at runtime."
+        },
+        {
+          "q": "How does the Options Pattern work in ASP.NET Core configuration?",
+          "a": "The Options Pattern uses strongly-typed configuration classes populated from `appsettings.json` sections. Register with `services.Configure<MyOptions>(configuration.GetSection(\"MySection\"))`, then inject `IOptions<MyOptions>` into classes for type-safe access to settings."
+        },
+        {
+          "q": "What is vertical slicing in application architecture?",
+          "a": "Vertical slicing organizes code by feature (use case) rather than by technical layer. Each feature folder contains its own controller, handler, DTO, and query. This reduces cross-folder dependencies and makes it easier to understand, develop, and delete a complete feature."
+        },
+        {
+          "q": "What is the difference between Composition and Inheritance?",
+          "a": "* **Inheritance:** Defines an 'is-a' relationship. `Dog` inherits from `Animal`. Tightly couples the subclass to the parent.\n* **Composition:** Defines a 'has-a' relationship. `Car` has an `Engine`. Prefer composition over inheritance because it is more flexible and avoids deep class hierarchies."
+        },
+        {
+          "q": "What is Application Configuration and how does the environment-specific override work?",
+          "a": "ASP.NET Core merges configuration from multiple sources in order: `appsettings.json` → `appsettings.{Environment}.json` → environment variables → command-line arguments. Values from later sources override earlier ones. For example, `appsettings.Production.json` overrides `appsettings.json` when running in production."
+        }
+      ]
+    },
+    {
+      "category": "High-Performance .NET",
+      "icon": "cpu",
+      "color": "var(--indigo)",
+      "questions": [
+        {
+          "q": "What is the difference between String and StringBuilder in C#?",
+          "a": "* **String:** Immutable. Every time you modify a string (e.g. concatenation in a loop), C# allocates a completely new string object on the heap, which increases memory overhead.\n* **StringBuilder:** Mutable. It allocates an internal buffer that can expand dynamically, allowing you to modify strings without allocating new objects. Use `StringBuilder` when doing frequent string modifications."
+        },
+        {
+          "q": "What are Value Types and Reference Types? Where are they stored?",
+          "a": "* **Value Types (int, bool, struct, enum):** Store the actual data value. Typically stored on the Stack (fast access, automatically cleaned up when out of scope).\n* **Reference Types (class, string, object, array):** Store a reference (pointer) to the actual data. Stored on the managed Heap, and their memory is managed by the Garbage Collector."
+        },
+        {
+          "q": "What is Boxing and Unboxing in C#?",
+          "a": "* **Boxing:** The process of converting a value type (like `int`) to a reference type (`object`). C# allocates memory on the heap and copies the value into it.\n* **Unboxing:** The process of extracting the value type from the object reference. Boxing and unboxing degrade performance because they trigger heap allocations and garbage collections."
+        },
+        {
+          "q": "What are the three generations in .NET Garbage Collection?",
+          "a": "* **Generation 0:** Contains short-lived objects (e.g. local variables created inside methods). Collected most frequently.\n* **Generation 1:** Act as a buffer between short-lived and long-lived objects.\n* **Generation 2:** Contains long-lived objects (e.g. singletons, static resources). Collected least frequently because scanning it is expensive."
+        },
+        {
+          "q": "What is the difference between List<T> and Array in C#?",
+          "a": "* **Array:** Fixed size at creation. Elements are stored in contiguous memory, making index access extremely fast. Cannot grow dynamically.\n* **List<T>:** Dynamic wrapper around an internal array. When the list exceeds its size, it automatically allocates a new, larger array and copies the elements over. Convenient, but causes allocations during growth."
+        },
+        {
+          "q": "What is the purpose of the using statement in C#?",
+          "a": "The `using` statement (or using declaration) ensures that `Dispose()` is automatically called on objects that implement the `IDisposable` interface (e.g. database connections, file streams, HTTP clients), even if an exception occurs. This prevents memory leaks and lock issues on system resources."
+        },
+        {
+          "q": "What is a memory leak in .NET?",
+          "a": "A memory leak in .NET happens when the Garbage Collector cannot free memory occupied by unused objects because they are still being referenced by active, long-lived objects (such as static variables, global events that weren't unsubscribed, or cached objects)."
+        },
+        {
+          "q": "How do you compare strings efficiently and case-insensitively in C#?",
+          "a": "Avoid converting strings to `.ToLower()` or `.ToUpper()` because they allocate new strings. Instead, use string comparison methods with case-insensitive enums:\n\n```csharp\nstring.Equals(str1, str2, StringComparison.OrdinalIgnoreCase);\n```"
+        },
+        {
+          "q": "What is the difference between Class and Struct in C#?",
+          "a": "* **Class:** Reference type. Stored on the heap. Passed by reference. Supports inheritance. Best for large objects with complex behavior.\n* **Struct:** Value type. Stored on the stack. Passed by copy. Does not support inheritance. Best for small, simple, read-only data models."
+        },
+        {
+          "q": "Why is it important to pre-allocate List capacity when the size is known?",
+          "a": "If you create `new List<int>()` and add elements, the list keeps resizing and copying its internal array, causing garbage collection overhead. If you know you need 1000 items, pre-allocate the capacity:\n\n```csharp\nvar list = new List<int>(1000);\n```"
+        },
+        {
+          "q": "What is a Span<T> and when should you use it?",
+          "a": "`Span<T>` is a stack-allocated type that provides a safe, contiguous view over memory (arrays, strings, native memory) without allocating new objects on the heap. Use it for high-performance string slicing, buffer manipulation, or parsing operations where you want zero-allocation access to subsets of data."
+        },
+        {
+          "q": "What is the difference between Dictionary<TKey, TValue> and List<T> for lookups?",
+          "a": "* **List<T>:** Linear search O(n). Scanning every item to find a match gets slower as the list grows.\n* **Dictionary<TKey, TValue>:** Hash-based O(1) average lookup. Ideal when you frequently look up items by a unique key. Use a Dictionary when you need fast lookups by key."
+        },
+        {
+          "q": "What is the IDisposable pattern and when should you implement it?",
+          "a": "Implement `IDisposable` when your class holds unmanaged resources (file handles, database connections, HTTP connections, timers). The `Dispose()` method releases these resources deterministically. Always use the full pattern with a finalizer as a safety net.\n\n```csharp\npublic void Dispose() { /* release resources */ GC.SuppressFinalize(this); }\n```"
+        },
+        {
+          "q": "What does the readonly keyword do in C#?",
+          "a": "A `readonly` field can only be assigned during declaration or in a constructor. Unlike `const`, it can hold non-compile-time values (like injected dependencies). Using `readonly` on fields communicates intent and prevents accidental reassignment after construction:\n\n```csharp\nprivate readonly ILogger _logger;\n```"
+        },
+        {
+          "q": "What is the difference between Array.Sort and LINQ OrderBy in terms of performance?",
+          "a": "* **Array.Sort:** In-place sort, zero allocations beyond the comparison overhead. Faster and more memory-efficient.\n* **LINQ OrderBy:** Creates an ordered enumerable object and deferred execution copy, causing additional heap allocations. Use `Array.Sort` for performance-critical paths, `OrderBy` for convenience in application logic."
+        },
+        {
+          "q": "What is object pooling and why is it useful?",
+          "a": "Object pooling reuses expensive objects (like database connections or HTTP clients) instead of creating and destroying them repeatedly. The .NET `ObjectPool<T>` class manages a pool of reusable instances, reducing GC pressure and allocation cost for frequently needed objects."
+        },
+        {
+          "q": "What is the difference between stackalloc and heap allocation?",
+          "a": "`stackalloc` allocates memory on the stack, which is automatically freed when the method returns. It is extremely fast and has zero GC overhead, but is limited in size. It is mainly used with `Span<T>` for small, short-lived buffers in performance-critical code."
+        },
+        {
+          "q": "What is a HashSet<T> and when should you use it instead of List<T>?",
+          "a": "`HashSet<T>` stores only unique elements and provides O(1) average lookup, add, and remove operations via hashing. Use it when you need to check if an item exists in a collection frequently, or when you want to ensure no duplicates, such as processing a set of unique IDs."
+        },
+        {
+          "q": "What is the cost of exceptions in .NET and how should they be used?",
+          "a": "Throwing and catching exceptions in .NET is expensive because the runtime must capture a stack trace and unwind call frames. Never use exceptions for normal control flow (e.g. validating user input). Reserve exceptions for truly exceptional, unexpected error conditions."
+        },
+        {
+          "q": "What is string interning in .NET?",
+          "a": "String interning is a process where .NET stores only one copy of each distinct string literal in a pool. When two variables reference the same string literal, they point to the same memory location, saving heap space. You can manually intern strings with `string.Intern(str)`."
+        },
+        {
+          "q": "What is Lazy<T> and when is it useful?",
+          "a": "`Lazy<T>` defers the creation of an expensive object until it is first accessed. It is thread-safe by default and ensures the object is created only once. Useful for expensive initialization that may not always be needed:\n\n```csharp\nvar lazyReport = new Lazy<Report>(() => GenerateReport());\n```"
+        },
+        {
+          "q": "What is the difference between synchronous and asynchronous I/O in terms of threads?",
+          "a": "* **Synchronous I/O:** The thread blocks and waits for the OS to complete the disk or network operation. The thread does nothing during the wait.\n* **Asynchronous I/O:** The thread starts the operation and is returned to the thread pool to serve other requests. When the OS completes the I/O, a thread is taken from the pool to continue execution."
+        },
+        {
+          "q": "What are Records in C# and how do they differ from regular classes?",
+          "a": "Records (C# 9+) are immutable reference types with value-based equality. Two record instances with the same property values are considered equal. They auto-generate `Equals`, `GetHashCode`, and `ToString` implementations. Use records for DTOs and data models where immutability and equality are important."
+        },
+        {
+          "q": "What is the purpose of BenchmarkDotNet?",
+          "a": "BenchmarkDotNet is the standard .NET library for writing micro-benchmarks. It runs your methods multiple times with warm-up, computes statistical measurements (mean, median, standard deviation), and reports memory allocations, making it reliable for comparing performance of different implementations."
+        },
+        {
+          "q": "What is the difference between a shallow copy and a deep copy?",
+          "a": "* **Shallow Copy:** Copies the object and its immediate field values. Reference-type fields still point to the same underlying objects in memory.\n* **Deep Copy:** Creates a completely independent copy of the object and all objects it references recursively. Changes to the copy do not affect the original."
+        }
+      ]
+    },
+    {
+      "category": "Async & Concurrency",
+      "icon": "shuffle",
+      "color": "var(--teal)",
+      "questions": [
+        {
+          "q": "What is the purpose of the async and await keywords?",
+          "a": "`async` and `await` allow writing asynchronous code that looks and behaves like synchronous code. `async` defines that a method performs async tasks, and `await` pauses execution of the method until the task completes without blocking the calling thread."
+        },
+        {
+          "q": "What is the difference between Task and Thread in C#?",
+          "a": "* **Thread:** A low-level operating system execution path. Creating a thread takes significant resources and memory.\n* **Task:** An abstraction representing an asynchronous operation. Tasks are managed by the .NET Task Scheduler and run on a pool of reuseable worker threads (ThreadPool), making them much more lightweight."
+        },
+        {
+          "q": "What is ThreadPool Starvation?",
+          "a": "ThreadPool Starvation occurs when all available worker threads in the ThreadPool are blocked by synchronous tasks (like waiting for database calls or API responses using `.Result` or `.Wait()`), preventing new asynchronous requests from getting a thread to execute."
+        },
+        {
+          "q": "Why should you avoid using .Result or .Wait() on asynchronous tasks?",
+          "a": "Using `.Result` or `.Wait()` blocks the current thread synchronously until the async task completes. This can cause deadlocks (especially in UI or older ASP.NET apps) and causes ThreadPool starvation under high traffic. Always use `await` instead."
+        },
+        {
+          "q": "What is Task.WhenAll and when should you use it?",
+          "a": "`Task.WhenAll` takes a collection of Tasks and executes them concurrently, returning a single Task that completes when all the individual tasks have finished. Use it to run independent operations (like calling multiple independent APIs) in parallel to save time.\n\n```csharp\nawait Task.WhenAll(apiCall1, apiCall2, apiCall3);\n```"
+        },
+        {
+          "q": "What is the difference between Task.Delay and Thread.Sleep?",
+          "a": "* **Thread.Sleep:** Blocks the current thread synchronously. No other code can run on that thread during the sleep.\n* **Task.Delay:** Creates an asynchronous delay. It releases the thread back to the thread pool to perform other work until the delay timer expires, improving scalability."
+        },
+        {
+          "q": "What is a CancellationToken and how do you use it?",
+          "a": "A `CancellationToken` is an object passed to asynchronous methods to request cancellation. The receiving method should monitor the token (e.g. calling `token.ThrowIfCancellationRequested()`) and gracefully exit if cancellation is requested, saving system resources."
+        },
+        {
+          "q": "How do you handle exceptions in asynchronous methods?",
+          "a": "You handle exceptions in async methods using standard `try/catch` blocks. If an exception occurs inside an awaited task, it is captured and re-thrown when you await the task, allowing you to catch it normally:\n\n```csharp\ntry {\n    await FetchDataAsync();\n} catch (Exception ex) {\n    _logger.LogError(ex, \"Error fetching data\");\n}\n```"
+        },
+        {
+          "q": "What is a deadlock and how does it happen in C#?",
+          "a": "A deadlock happens when two or more threads are blocked indefinitely, each waiting for the other to release a resource or lock. In async C#, this often happens when blocking on an async task synchronously (e.g. `Task.Result`) on a thread that is required to run the task continuation."
+        },
+        {
+          "q": "What is the lock statement in C#?",
+          "a": "The `lock` keyword is used to ensure that a block of code (critical section) is executed by only one thread at a time. It blocks other threads until the lock is released, protecting shared variables from corruption."
+        },
+        {
+          "q": "What is Task.WhenAny and how does it differ from Task.WhenAll?",
+          "a": "`Task.WhenAny` returns when the *first* of the supplied tasks completes, regardless of whether others are still running. Use it for timeout patterns or race conditions (e.g. take the fastest of multiple cache lookups). `Task.WhenAll` waits for *all* tasks to complete."
+        },
+        {
+          "q": "What is ConfigureAwait(false) and when should you use it?",
+          "a": "`ConfigureAwait(false)` tells the awaited task not to marshal the continuation back to the original synchronization context. Use it in library or infrastructure code to improve performance and avoid deadlocks in contexts that have a synchronization context (e.g. old ASP.NET or UI frameworks)."
+        },
+        {
+          "q": "What is a SemaphoreSlim and when would you use it?",
+          "a": "`SemaphoreSlim` limits the number of concurrent threads/tasks accessing a resource. Unlike `lock`, it is async-compatible and supports `await`:\n\n```csharp\nvar semaphore = new SemaphoreSlim(3); // allow 3 concurrent\nawait semaphore.WaitAsync();\ntry { /* critical work */ } finally { semaphore.Release(); }\n```"
+        },
+        {
+          "q": "What is the difference between parallelism and concurrency?",
+          "a": "* **Concurrency:** Dealing with multiple tasks at the same time by interleaving their execution (e.g., async/await). One CPU core handles multiple tasks by switching between them.\n* **Parallelism:** Executing multiple tasks simultaneously on multiple CPU cores at the same physical moment (e.g., Parallel.ForEach)."
+        },
+        {
+          "q": "What is Parallel.ForEach and when is it appropriate to use it?",
+          "a": "`Parallel.ForEach` partitions a collection and processes items in parallel across multiple CPU cores. It is appropriate for **CPU-bound** tasks (e.g., heavy computations on each item). Avoid it for I/O-bound operations; use async/await instead to prevent blocking thread pool threads."
+        },
+        {
+          "q": "What is an async void method and why is it dangerous?",
+          "a": "`async void` methods cannot be awaited, so exceptions thrown inside them are not captured by any caller's try/catch — they propagate directly to the SynchronizationContext and can crash the application. Use `async Task` instead. `async void` is only acceptable for event handlers."
+        },
+        {
+          "q": "What is the purpose of the ValueTask<T> type?",
+          "a": "`ValueTask<T>` is a struct-based alternative to `Task<T>` that avoids heap allocation when a result is already available synchronously. Use it for performance-critical, hot-path methods where results are frequently cached or available without actual async work."
+        },
+        {
+          "q": "How does ASP.NET Core handle concurrent requests?",
+          "a": "ASP.NET Core uses a non-blocking, async I/O model with the ThreadPool. Each HTTP request is assigned a thread from the pool. If the handler uses `await` for I/O operations, the thread is released back to the pool during the wait, allowing other requests to be processed without increasing thread count."
+        },
+        {
+          "q": "What is a Channel<T> in .NET and what problem does it solve?",
+          "a": "`Channel<T>` is a thread-safe, high-performance, async-first producer/consumer queue. It solves the problem of handing off work between producers (that write data) and consumers (that process data) asynchronously without blocking threads, as an alternative to `ConcurrentQueue` + polling."
+        },
+        {
+          "q": "What is the difference between volatile and Interlocked?",
+          "a": "* **volatile:** Ensures that reads/writes to a field are not cached by the CPU or compiler. Prevents stale data but doesn't provide atomicity for composite operations.\n* **Interlocked:** Provides atomic operations (increment, compare-and-swap) on shared variables without using locks, making it suitable for simple counter updates in multi-threaded scenarios."
+        },
+        {
+          "q": "What is an IAsyncEnumerable<T> and when is it useful?",
+          "a": "`IAsyncEnumerable<T>` allows you to yield items asynchronously in a `foreach` loop (using `await foreach`). It is useful when streaming large datasets from a database or external API one page at a time, avoiding loading all results into memory at once."
+        },
+        {
+          "q": "What is the difference between Task.Run and Task.Factory.StartNew?",
+          "a": "`Task.Run` is the recommended shortcut to queue CPU-bound work to the ThreadPool with safe defaults. `Task.Factory.StartNew` is a lower-level API with more configuration options (e.g. `LongRunning` flag) but is more complex and easier to misuse. Prefer `Task.Run` for most scenarios."
+        },
+        {
+          "q": "What is ThreadLocal<T>?",
+          "a": "`ThreadLocal<T>` provides each thread with its own independent copy of a variable. This avoids contention or race conditions when you need per-thread state (e.g. per-thread random number generators or per-thread StringBuilder buffers) without using locks."
+        },
+        {
+          "q": "How do you safely update a shared counter from multiple threads?",
+          "a": "Use `Interlocked.Increment` for atomic increment without a lock:\n\n```csharp\nprivate int _counter = 0;\nInterlocked.Increment(ref _counter);\n```\nThis is more efficient than `lock` for single-operation increments since it uses CPU-level atomic instructions."
+        },
+        {
+          "q": "What is a ReaderWriterLockSlim?",
+          "a": "`ReaderWriterLockSlim` allows multiple threads to read a shared resource concurrently, but gives exclusive access to a single thread for write operations. It improves throughput compared to a plain `lock` in read-heavy scenarios, where contention between readers would otherwise serialize all access."
+        }
+      ]
+    },
+    {
+      "category": "Data Access",
+      "icon": "database",
+      "color": "var(--cyan)",
+      "questions": [
+        {
+          "q": "What is Entity Framework Core (EF Core)?",
+          "a": "EF Core is an open-source Object-Relational Mapper (ORM) for .NET. It allows developers to interact with relational databases using C# objects, eliminating the need to write most of the SQL data-access code."
+        },
+        {
+          "q": "What is the difference between Eager Loading and Lazy Loading in EF Core?",
+          "a": "* **Eager Loading:** Loads related data in the initial database query using the `.Include()` method (e.g., loading an Order and its Items in one query).\n* **Lazy Loading:** Loads related data only when you access the navigation property (e.g. calling `order.Items` in a foreach loop). Can cause performance issues by running multiple database calls."
+        },
+        {
+          "q": "What is the N+1 query problem and how do you fix it?",
+          "a": "The N+1 problem occurs when you load a list of parent entities (1 query) and then query related child entities in a loop for each parent (N queries). This results in N+1 total queries. You fix it by using Eager Loading (`.Include()`) to load all data in a single query."
+        },
+        {
+          "q": "Why is AsNoTracking() used in EF Core?",
+          "a": "By default, EF Core tracks changes for all queried entities to update them when `SaveChanges()` is called. `.AsNoTracking()` tells EF Core to skip tracking. Use it for read-only queries to save memory and make execution faster."
+        },
+        {
+          "q": "What are EF Core Migrations?",
+          "a": "Migrations are a set of commands and C# files that keep your database schema in sync with your C# entity models. When you modify an entity class, you run `add-migration` to create the schema change instructions, and `update-database` to apply them."
+        },
+        {
+          "q": "What is Dapper and how does it compare to EF Core?",
+          "a": "* **EF Core:** Full ORM. Manages SQL generation, change tracking, and migrations. Easy to use but has some performance overhead.\n* **Dapper:** Micro-ORM. You write raw SQL queries, and Dapper maps the results directly to C# classes. Extremely fast and lightweight, but does not manage schemas or queries for you."
+        },
+        {
+          "q": "What is the difference between FirstOrDefault() and SingleOrDefault() in LINQ?",
+          "a": "* **FirstOrDefault():** Returns the first element that matches the condition, or a default value (null) if none is found.\n* **SingleOrDefault():** Returns the only element that matches the condition. Throws an exception if *more than one* element matches, or returns default if none is found."
+        },
+        {
+          "q": "What is the difference between IEnumerable and IQueryable in LINQ?",
+          "a": "* **IEnumerable:** Best for in-memory collections. Filtering operations (like `.Where()`) run in application memory after data is loaded.\n* **IQueryable:** Best for querying databases. Filtering operations are translated to SQL statements and executed on the database side, fetching only matching records."
+        },
+        {
+          "q": "How do database indexes speed up queries?",
+          "a": "An index acts like an index in a book. Instead of scanning the entire database table (Table Scan) to find a record, the database queries the index to find the location of the row directly, reducing search time significantly."
+        },
+        {
+          "q": "What is DbContext in EF Core?",
+          "a": "`DbContext` represents a session with the database. It is the core class responsible for querying, tracking changes, saving updates, and managing database connections."
+        },
+        {
+          "q": "What is a Database Transaction and when do you need one?",
+          "a": "A transaction groups multiple database operations into an atomic unit: either all operations succeed and are committed, or all fail and are rolled back. Use transactions when you need to maintain data consistency across multiple related changes, such as transferring money between accounts."
+        },
+        {
+          "q": "What is the difference between Code First and Database First in EF Core?",
+          "a": "* **Code First:** You define C# entity classes first, then EF Core generates migrations to create/update the database schema.\n* **Database First:** You start with an existing database and use EF Core scaffolding to generate C# entity classes and a DbContext from the existing schema."
+        },
+        {
+          "q": "How do you prevent SQL Injection when using Dapper?",
+          "a": "Always use parameterized queries in Dapper by passing parameters as an anonymous object — never interpolate user input into the SQL string:\n\n```csharp\n// SAFE:\nvar user = await conn.QueryFirstAsync<User>(\"SELECT * FROM Users WHERE Id = @Id\", new { Id = userId });\n// DANGEROUS: \"SELECT * FROM Users WHERE Id = \" + userId\n```"
+        },
+        {
+          "q": "What is a Composite Index and when should you use one?",
+          "a": "A Composite Index is an index on two or more columns. The database uses it when queries filter or sort on those columns together. The column order matters: the index is most effective when filtering starts with the leading (leftmost) column. Use them to optimize common multi-column `WHERE` clauses."
+        },
+        {
+          "q": "What is connection pooling in ADO.NET and EF Core?",
+          "a": "Connection pooling reuses open database connections from a pool instead of opening and closing a physical connection for every request. ADO.NET manages this automatically. When you call `connection.Open()`, it gets an existing idle connection from the pool, which is much faster than establishing a new TCP connection."
+        },
+        {
+          "q": "What is the difference between SQL JOIN types?",
+          "a": "* **INNER JOIN:** Returns rows where both tables have a matching value.\n* **LEFT JOIN:** Returns all rows from the left table and matching rows from the right; null for non-matches.\n* **RIGHT JOIN:** Opposite of LEFT JOIN.\n* **FULL OUTER JOIN:** Returns all rows from both tables, with nulls for non-matches on either side."
+        },
+        {
+          "q": "What is Optimistic Concurrency in EF Core?",
+          "a": "Optimistic Concurrency assumes that conflicts between concurrent users are rare. EF Core can use a `[ConcurrencyCheck]` attribute or a `rowversion` column. Before saving, EF Core verifies the record hasn't been changed since it was read. If another user changed it, a `DbUpdateConcurrencyException` is thrown."
+        },
+        {
+          "q": "How does EF Core handle one-to-many relationships?",
+          "a": "Define a navigation property collection on the 'one' side and a foreign key + navigation property on the 'many' side:\n\n```csharp\npublic class Order {\n    public List<OrderItem> Items { get; set; }\n}\npublic class OrderItem {\n    public int OrderId { get; set; }\n    public Order Order { get; set; }\n}\n```\nEF Core auto-detects and maps this relationship."
+        },
+        {
+          "q": "What is AnyAsync() vs CountAsync() for existence checks in EF Core?",
+          "a": "Use `AnyAsync()` when you only need to know if at least one record exists. It translates to `SELECT TOP 1` or `EXISTS` in SQL, which is faster than `CountAsync()` which scans all matching rows to count them."
+        },
+        {
+          "q": "What is a View in a relational database?",
+          "a": "A View is a saved SQL query stored in the database as a named virtual table. It does not store data itself but presents a specific projection of one or more tables. Views simplify complex queries, enforce column-level security, and can be used to project read models for CQRS."
+        },
+        {
+          "q": "What is pagination and how do you implement it in EF Core?",
+          "a": "Pagination loads a subset of records to avoid loading millions of rows at once:\n\n```csharp\nvar page = await _db.Products\n    .Skip((pageNumber - 1) * pageSize)\n    .Take(pageSize)\n    .ToListAsync();\n```\nAlways ensure the query is sorted before paginating, as SQL has no guaranteed row order without an `ORDER BY`."
+        },
+        {
+          "q": "What is a Stored Procedure and when should you use one?",
+          "a": "A Stored Procedure is a precompiled set of SQL statements stored in the database. EF Core can call them with `FromSqlRaw`. Use them for complex multi-step DB logic, batch operations, or when you need to share DB logic between multiple applications or languages."
+        },
+        {
+          "q": "What is soft delete vs hard delete?",
+          "a": "* **Hard Delete:** Permanently removes the record from the database.\n* **Soft Delete:** Marks the record as deleted (e.g. `IsDeleted = true`) but keeps it in the table. Useful for audit trails, data recovery, and foreign key integrity. EF Core global query filters can automatically hide soft-deleted records."
+        },
+        {
+          "q": "What is the Unit of Work pattern in EF Core?",
+          "a": "The Unit of Work pattern groups all write operations (inserts, updates, deletes) within a single business transaction. `DbContext` in EF Core already implements this: you make multiple entity changes, then call `SaveChangesAsync()` once to commit all of them atomically to the database."
+        },
+        {
+          "q": "What is a covering index?",
+          "a": "A covering index includes all the columns needed to satisfy a query — both the filter columns and the SELECT columns. When the database finds all required data in the index itself without accessing the actual table rows (Heap or Clustered Index), this is called an Index Scan or Index Seek with no Key Lookup, resulting in very fast query execution."
+        }
+      ]
+    },
+    {
+      "category": "Cloud & Distributed",
+      "icon": "cloud",
+      "color": "var(--blue)",
+      "questions": [
+        {
+          "q": "What is HttpClient and how should it be instantiated in .NET Core?",
+          "a": "`HttpClient` is used to send HTTP requests to web APIs. Do not instantiate it directly in a `using` block because it can leave sockets open in the OS. Instead, register and inject it using `IHttpClientFactory`, which manages connection lifetimes automatically."
+        },
+        {
+          "q": "What is JSON Serialization and Deserialization?",
+          "a": "* **Serialization:** Converting a C# object into a JSON string (e.g. to send it over HTTP).\n* **Deserialization:** Converting a JSON string back into a C# object. In modern .NET, this is handled using the `System.Text.Json` library."
+        },
+        {
+          "q": "What is the difference between In-Memory Caching and Distributed Caching?",
+          "a": "* **In-Memory Caching:** Caches data in the web server's local RAM. Extremely fast, but resets on restart and is not shared across multiple servers.\n* **Distributed Caching (e.g. Redis):** Caches data in an external database server. Shared by all instances of your application, persistent, but requires network calls."
+        },
+        {
+          "q": "How do you read environment variables in .NET?",
+          "a": "You read environment variables using the `Environment` class:\n\n```csharp\nstring dbConn = Environment.GetEnvironmentVariable(\"DATABASE_URL\");\n```\nIn ASP.NET Core, environment variables are also automatically mapped into the `IConfiguration` provider."
+        },
+        {
+          "q": "What is REST and what are the main HTTP methods?",
+          "a": "REST is an architectural style for designing APIs using standard HTTP protocol:\n\n* **GET:** Retrieve a resource.\n* **POST:** Create a new resource.\n* **PUT:** Update/replace an existing resource.\n* **DELETE:** Remove a resource."
+        },
+        {
+          "q": "What is Docker and why is it used?",
+          "a": "Docker is a tool that packages an application and all its dependencies into a lightweight container. This ensures that the application runs identically on any machine (development, staging, or production), preventing \"it works on my machine\" issues."
+        },
+        {
+          "q": "What is the purpose of background services in ASP.NET Core?",
+          "a": "Background services (implementing `IHostedService` or inheriting from `BackgroundService`) allow running tasks in the background of your web server (e.g. processing queue items, sending periodic emails, or cleanups) without blocking API requests."
+        },
+        {
+          "q": "What is the difference between synchronous and asynchronous API calls?",
+          "a": "* **Synchronous API call:** The client waits for the server response before continuing with any other code, blocking execution.\n* **Asynchronous API call:** The client initiates the call and can continue executing other code. It receives a notification or awaits the result when the server responds."
+        },
+        {
+          "q": "What is an API Gateway?",
+          "a": "An API Gateway is a server that acts as a single entry point for API clients. It receives requests, routes them to the appropriate backend microservices, and handles concerns like authentication, SSL termination, and rate limiting."
+        },
+        {
+          "q": "What is a connection string?",
+          "a": "A connection string is a formatted string containing information needed to establish a connection to a database, such as database server address, port, database name, username, and password."
+        },
+        {
+          "q": "What is a Message Queue and what problem does it solve?",
+          "a": "A message queue (e.g., Azure Service Bus, RabbitMQ) decouples services by allowing the producer to send a message without waiting for the consumer to process it. It solves the problem of handling traffic spikes (the queue buffers messages) and makes services more resilient to temporary outages."
+        },
+        {
+          "q": "What is a CDN (Content Delivery Network) and when should you use it?",
+          "a": "A CDN is a global network of edge servers that caches and serves static content (images, CSS, JS) from the server closest to the user. Use it to reduce latency, lower bandwidth costs on your origin server, and improve page load speed for geographically distributed users."
+        },
+        {
+          "q": "What is horizontal vs vertical scaling?",
+          "a": "* **Vertical Scaling (Scale Up):** Increasing the resources of a single server (more CPU, RAM). Has hardware limits and creates a single point of failure.\n* **Horizontal Scaling (Scale Out):** Adding more server instances to share the load. More resilient and cost-effective for stateless applications."
+        },
+        {
+          "q": "What is a Health Check endpoint and why is it important in cloud deployments?",
+          "a": "A health check endpoint (e.g. `/health`) returns the status of the application and its dependencies. Load balancers and orchestrators (Kubernetes) poll this endpoint to decide whether to route traffic to an instance or restart it. ASP.NET Core has built-in health checks via `AddHealthChecks()`."
+        },
+        {
+          "q": "What is Retry Policy and why is it needed for distributed systems?",
+          "a": "Network calls between services can fail transiently (brief network blips, timeouts). A Retry Policy automatically retries the failed call a configurable number of times with a delay. In .NET, Polly is the standard library for configuring retry, circuit breaker, and timeout policies on `HttpClient`."
+        },
+        {
+          "q": "What is a Circuit Breaker pattern?",
+          "a": "The Circuit Breaker pattern stops sending requests to a failing external service after a threshold of consecutive failures. It 'opens' the circuit for a cool-down period, returning a fallback response immediately. After the cool-down, it 'half-opens' to test if the service has recovered before resuming full traffic."
+        },
+        {
+          "q": "What is gRPC and how does it differ from REST?",
+          "a": "gRPC is a high-performance RPC framework using HTTP/2 and Protocol Buffers (binary format) instead of JSON. It is faster and more efficient than REST (especially for inter-service communication), supports streaming, and generates strongly-typed client code from `.proto` contract files."
+        },
+        {
+          "q": "What is the difference between PUT and PATCH in REST APIs?",
+          "a": "* **PUT:** Replaces the entire resource with the provided payload. All fields not included are set to their default/null values.\n* **PATCH:** Applies a partial update to the resource, modifying only the fields provided in the request body. Use PATCH for partial updates to avoid overwriting unchanged data."
+        },
+        {
+          "q": "What is Blob Storage and when do you use it?",
+          "a": "Blob Storage (like Azure Blob Storage or AWS S3) is object storage optimized for storing unstructured binary data — files, images, videos, backups. Use it instead of the database for large files to avoid bloating the database, reduce costs, and enable CDN delivery directly from the blob container."
+        },
+        {
+          "q": "What is the purpose of an HTTP status code 429?",
+          "a": "HTTP 429 Too Many Requests indicates that the client has exceeded the rate limit set by the API server. The response usually includes a `Retry-After` header indicating when the client can resume sending requests. APIs use rate limiting to protect backend resources from overload."
+        },
+        {
+          "q": "What is server-sent events (SSE) vs WebSockets?",
+          "a": "* **SSE:** Unidirectional, server-to-client streaming over standard HTTP. Simple to use, works through proxies, and automatically reconnects. Best for notifications or live feeds.\n* **WebSockets:** Full bidirectional communication channel. Best for real-time interactive apps (chat, collaborative editing, live games)."
+        },
+        {
+          "q": "What is Idempotency and why does it matter for APIs?",
+          "a": "An operation is idempotent if calling it multiple times produces the same result as calling it once. GET, PUT, and DELETE are idempotent; POST is not. Designing idempotent APIs (using idempotency keys on POST) is crucial for safe retries in distributed systems where the network can fail after a request is processed."
+        },
+        {
+          "q": "What is a Dockerfile and what does it contain?",
+          "a": "A Dockerfile is a text script that defines how to build a Docker image. It starts with a base image (`FROM`), copies application files (`COPY`), runs build commands (`RUN`), and specifies the entry point (`ENTRYPOINT`). When built, it creates an immutable image that can run as a container."
+        },
+        {
+          "q": "What is service discovery in distributed systems?",
+          "a": "Service discovery is the mechanism by which services automatically find each other's network addresses in a dynamic environment where IPs change (e.g. containers). Tools like Consul, etcd, or Kubernetes DNS allow services to register themselves and query for others by name rather than hardcoded IP."
+        },
+        {
+          "q": "What is the difference between SQL and NoSQL databases?",
+          "a": "* **SQL (Relational):** Structured data, fixed schema, ACID transactions, powerful JOIN queries. Best for complex relational data (orders, users, inventory).\n* **NoSQL:** Flexible schema, horizontally scalable, optimized for specific access patterns (documents, key-value, graphs). Best for unstructured data, large-scale reads, or simple lookups."
+        }
+      ]
+    },
+    {
+      "category": "Security & Identity",
+      "icon": "shield",
+      "color": "var(--magenta)",
+      "questions": [
+        {
+          "q": "How do parameterized queries protect against SQL Injection?",
+          "a": "SQL Injection occurs when user input is concatenated directly into SQL strings, allowing attackers to execute arbitrary SQL commands. Parameterized queries send inputs as separate parameters, ensuring the database treats input values as pure data, never as executable SQL code."
+        },
+        {
+          "q": "What is CORS (Cross-Origin Resource Sharing)?",
+          "a": "CORS is a browser security mechanism that prevents web pages from making requests to an API at a different domain than the one that served the page. You must configure CORS policies on the API server to explicitly allow requests from your frontend domain."
+        },
+        {
+          "q": "What is the difference between Authentication and Authorization?",
+          "a": "* **Authentication:** Verifying *who* the user is (e.g., checking password, validating JWT token).\n* **Authorization:** Verifying *what* the authenticated user is allowed to do (e.g., checking if they have the 'Admin' role)."
+        },
+        {
+          "q": "How should passwords be stored in a database?",
+          "a": "Passwords should never be stored in plain text. They must be hashed using a strong cryptographic hashing algorithm (like bcrypt, PBKDF2, or Argon2) with a unique 'salt' (a random string appended to the password before hashing) to protect against database leaks."
+        },
+        {
+          "q": "What is JWT (JSON Web Token)?",
+          "a": "JWT is an open standard for securely transmitting information between parties as a JSON object. It is commonly used for stateless authentication in APIs. Once logged in, the client sends the JWT in the `Authorization: Bearer <token>` header of every request."
+        },
+        {
+          "q": "How does ASP.NET Core handle data protection?",
+          "a": "ASP.NET Core has a built-in Data Protection API (`IDataProtectionProvider`) used to encrypt and decrypt data at rest, such as cookies, verification tokens, or reset passwords, protecting them from tampering."
+        },
+        {
+          "q": "What is XSS (Cross-Site Scripting) and how do you prevent it?",
+          "a": "XSS occurs when malicious scripts are injected into web pages and executed in users' browsers. You prevent it by validating and sanitizing user inputs, and HTML-encoding all dynamic values displayed in the HTML (which Razor Pages does by default)."
+        },
+        {
+          "q": "Why is HTTPS mandatory in modern APIs?",
+          "a": "HTTPS encrypts the data sent between client and server, preventing attackers from eavesdropping, intercepting, or altering sensitive information (like passwords, credit cards, or JWT tokens) over public networks."
+        },
+        {
+          "q": "What is the role of Role-Based Authorization in ASP.NET Core?",
+          "a": "Role-Based Authorization allows restricting access to controllers or endpoints based on user roles:\n\n```csharp\n[Authorize(Roles = \"Admin\")]\npublic class AdminController : ControllerBase { ... }\n```"
+        },
+        {
+          "q": "How do you securely handle API keys in configuration files?",
+          "a": "Do not commit raw API keys or passwords to git repositories (like inside `appsettings.json`). Instead, read them from environment variables or use the Secrets Manager tool (`dotnet user-secrets`) during local development."
+        },
+        {
+          "q": "What is CSRF (Cross-Site Request Forgery) and how does ASP.NET Core protect against it?",
+          "a": "CSRF tricks an authenticated user's browser into making an unwanted request to your site. ASP.NET Core protects against it using Anti-Forgery Tokens: a unique hidden token embedded in HTML forms. The server validates the token on form submission, ensuring the request originated from your own site."
+        },
+        {
+          "q": "What is the difference between Symmetric and Asymmetric encryption?",
+          "a": "* **Symmetric:** Uses the same key to encrypt and decrypt. Fast, but the key must be shared securely (e.g., AES for encrypting stored data).\n* **Asymmetric:** Uses a public key to encrypt and a private key to decrypt (or vice versa). Slower but allows secure communication without sharing the private key (e.g., RSA, used in HTTPS/TLS handshakes)."
+        },
+        {
+          "q": "What is the principle of Least Privilege?",
+          "a": "The principle of Least Privilege states that every user, service, and component should only have the minimum permissions required to perform its function. For example, a reporting service that only reads data should have a database user with read-only access, not administrator rights."
+        },
+        {
+          "q": "What is a Refresh Token and how does it extend JWT authentication?",
+          "a": "Access tokens (JWTs) are short-lived (e.g., 15 minutes) for security. A Refresh Token is a long-lived, securely stored token that can obtain a new access token without requiring the user to log in again. Refresh tokens should be stored in an HTTP-only, Secure cookie to prevent JavaScript access."
+        },
+        {
+          "q": "What is OAuth 2.0?",
+          "a": "OAuth 2.0 is an authorization framework that allows third-party applications to access a user's resources without exposing their credentials. It uses access tokens issued by an Authorization Server (e.g., Google, Azure AD). The user grants limited permission to the application without sharing their password."
+        },
+        {
+          "q": "What is Claims-Based Identity in ASP.NET Core?",
+          "a": "A Claim is a key-value pair describing something about a user (e.g., `role: Admin`, `email: user@example.com`). After authentication, the user's identity is represented as a collection of claims. Authorization policies can check for specific claim values to grant or deny access to resources."
+        },
+        {
+          "q": "What is Rate Limiting and why is it important for security?",
+          "a": "Rate limiting restricts the number of API requests from a single IP or user over a time window. It protects against brute-force attacks (e.g., trying thousands of passwords), DoS attacks, and web scraping. ASP.NET Core 7+ includes built-in rate limiting middleware."
+        },
+        {
+          "q": "What is an HTTP-Only cookie and why is it more secure than localStorage?",
+          "a": "An HTTP-Only cookie cannot be accessed by JavaScript (e.g., `document.cookie`), protecting it from XSS attacks. Storing sensitive tokens (like refresh tokens) in HTTP-Only, Secure cookies is safer than `localStorage`, which can be read by any JavaScript running on the page."
+        },
+        {
+          "q": "What is a security header and give two examples?",
+          "a": "Security headers are HTTP response headers that instruct browsers to enforce security policies:\n\n* **Strict-Transport-Security (HSTS):** Forces HTTPS connections.\n* **Content-Security-Policy (CSP):** Restricts which scripts, styles, and resources the browser may load, preventing XSS."
+        },
+        {
+          "q": "What is input validation and why is it a security concern?",
+          "a": "Input validation ensures that user-supplied data conforms to expected formats, types, and lengths. Failing to validate inputs can lead to injection attacks (SQL, XSS), buffer overflows, or invalid data corrupting business logic. Always validate on the server side — client-side validation is for UX, not security."
+        },
+        {
+          "q": "What is the difference between hashing and encryption?",
+          "a": "* **Hashing:** A one-way transformation. You cannot reverse a hash to get the original data. Used for storing passwords.\n* **Encryption:** A two-way transformation. Data can be decrypted back to its original form using a key. Used for storing data that must be readable again, like credit card numbers."
+        },
+        {
+          "q": "What is ASP.NET Core Identity?",
+          "a": "ASP.NET Core Identity is a membership system that handles user registration, login, password hashing, role management, and claims. It integrates with EF Core to store user data in a database and with OAuth providers for social login, providing a complete authentication and authorization solution."
+        },
+        {
+          "q": "What is a nonce and how is it used in security?",
+          "a": "A nonce (number used once) is a unique random value included in a request or token to prevent replay attacks. For example, a nonce in a JWT or an authentication request ensures that an intercepted token cannot be reused by an attacker, as the server checks the nonce has never been seen before."
+        },
+        {
+          "q": "What is OWASP Top 10 and why is it relevant for .NET developers?",
+          "a": "The OWASP Top 10 is a standard list of the most critical web application security risks, including SQL Injection, XSS, Broken Authentication, and Insecure Deserialization. Every .NET developer should know these vulnerabilities to write secure code and avoid the most common attack vectors."
+        },
+        {
+          "q": "What is Secret Management in Azure and how does it relate to .NET?",
+          "a": "Azure Key Vault securely stores secrets (API keys, connection strings, certificates) outside of application code. In .NET, you integrate Key Vault with the `IConfiguration` pipeline via the `Azure.Extensions.AspNetCore.Configuration.Secrets` package, so secrets are loaded at startup without ever being stored in files or environment variables."
+        }
+      ]
+    },
+    {
+      "category": "Testing & DevOps",
+      "icon": "terminal",
+      "color": "var(--pink)",
+      "questions": [
+        {
+          "q": "What is a Unit Test?",
+          "a": "A Unit Test is an automated test that verifies the correctness of a small, isolated piece of code (typically a single method) without interacting with external systems like databases, file systems, or network services."
+        },
+        {
+          "q": "What is the AAA (Arrange-Act-Assert) pattern?",
+          "a": "AAA is a structural pattern for writing readable unit tests:\n\n* **Arrange:** Set up test prerequisites, inputs, and mock dependencies.\n* **Act:** Invoke the method being tested.\n* **Assert:** Verify that the method's behavior or output matches the expected outcome."
+        },
+        {
+          "q": "What is Mocking in unit tests and why is it used?",
+          "a": "Mocking is creating a fake implementation of a dependency (using frameworks like Moq) to isolate the class under test. This allows testing business logic without calling real databases or external APIs."
+        },
+        {
+          "q": "What is the difference between xUnit and NUnit?",
+          "a": "Both are popular .NET testing frameworks. The primary differences are syntax (e.g. xUnit uses `[Fact]` and `[Theory]`, while NUnit uses `[Test]` and `[TestCase]`) and test isolation (xUnit creates a new instance of the test class for each test execution to prevent shared state issues)."
+        },
+        {
+          "q": "What is an Integration Test?",
+          "a": "An Integration Test verifies that multiple components of an application function correctly together (e.g., testing that an API controller successfully reads data from a real SQLite test database and applies middleware)."
+        },
+        {
+          "q": "What is Continuous Integration (CI)?",
+          "a": "CI is the practice of automatically building and testing your application code in a pipeline every time a team member pushes changes to the shared repository, detecting compile errors or failing tests early."
+        },
+        {
+          "q": "What is the purpose of Health Checks in ASP.NET Core?",
+          "a": "Health Checks expose endpoints (like `/health`) that check the status of your application and its dependencies. Container orchestrators (like Kubernetes) query these endpoints to determine if the container is healthy or needs to be restarted."
+        },
+        {
+          "q": "What is Code Coverage?",
+          "a": "Code Coverage is a metric measuring the percentage of your application source code executed during automated tests. While useful to identify untested paths, aiming for 100% coverage often leads to fragile tests with little business value."
+        },
+        {
+          "q": "What is structured logging?",
+          "a": "Structured logging (e.g. using Serilog) writes logs as structured JSON key-value properties rather than plain text. This allows log management platforms to index, filter, and search logs easily by fields like `UserId` or `ErrorCode`."
+        },
+        {
+          "q": "How do you run tests from the command line in .NET?",
+          "a": "You can run all unit and integration tests inside your workspace by running the .NET CLI command:\n\n```bash\ndotnet test\n```"
+        },
+        {
+          "q": "What is Continuous Deployment (CD) and how does it differ from Continuous Delivery?",
+          "a": "* **Continuous Delivery:** Automatically builds and tests every change, but a manual approval step is required before deploying to production.\n* **Continuous Deployment:** Extends delivery by automatically deploying every successful build directly to production without manual intervention, requiring a high degree of automated testing confidence."
+        },
+        {
+          "q": "What is a test double and what types exist?",
+          "a": "A test double is any object that replaces a real dependency in tests. Types include:\n* **Stub:** Returns hardcoded values.\n* **Mock:** Verifies that specific methods were called.\n* **Fake:** A lightweight working implementation (e.g., an in-memory DB).\n* **Spy:** Records calls for later verification."
+        },
+        {
+          "q": "What is a Flaky Test?",
+          "a": "A flaky test is one that produces inconsistent results — passing sometimes and failing other times without code changes. Common causes include timing issues, shared state between tests, non-deterministic random data, and external network dependencies. Flaky tests erode team confidence in the test suite."
+        },
+        {
+          "q": "What is Test-Driven Development (TDD)?",
+          "a": "TDD is a development practice where you write a failing test first (Red), then write the minimum code to make it pass (Green), then refactor the code while keeping tests green (Refactor). This ensures code is always testable, focused on behavior, and has high coverage by design."
+        },
+        {
+          "q": "What is a Dockerfile's multi-stage build and why is it useful?",
+          "a": "A multi-stage Dockerfile uses separate build stages. For example, the first stage compiles the .NET app using the full SDK image, and the second stage copies only the compiled output into a smaller ASP.NET runtime image. This produces a final image that is much smaller and doesn't contain build tools."
+        },
+        {
+          "q": "What is a pipeline artifact in CI/CD?",
+          "a": "A pipeline artifact is a file or directory produced by one stage of a CI/CD pipeline and passed to subsequent stages. For example, the `dotnet publish` output is stored as an artifact by the build stage, then downloaded and deployed by the release stage without rebuilding."
+        },
+        {
+          "q": "What is the Strangler Fig pattern for testing legacy code?",
+          "a": "The Strangler Fig pattern gradually replaces legacy system functionality with new code. For testing, you write integration tests for the new implementation first, then migrate behavior incrementally while validating that the tests still pass, reducing the risk of breaking existing features."
+        },
+        {
+          "q": "What is infrastructure as code (IaC)?",
+          "a": "Infrastructure as Code means managing and provisioning infrastructure (virtual machines, networks, databases) through machine-readable configuration files (e.g., Terraform, Bicep) rather than manual UI clicks. This enables version control, repeatability, and automated environment creation."
+        },
+        {
+          "q": "What is the purpose of `dotnet publish` in CI/CD pipelines?",
+          "a": "`dotnet publish` compiles the application, resolves NuGet dependencies, and produces a self-contained deployment package in the output directory. In CI/CD pipelines, this command creates the artifact that is deployed to staging or production environments."
+        },
+        {
+          "q": "What is a Blue-Green Deployment?",
+          "a": "Blue-Green Deployment maintains two identical production environments (Blue and Green). New releases are deployed to the idle environment, tested, and then the load balancer is switched to route traffic to the new version. The old version remains live and can be rolled back to instantly if issues arise."
+        },
+        {
+          "q": "What is the difference between unit tests and end-to-end (E2E) tests?",
+          "a": "* **Unit Tests:** Test a single unit of code in isolation. Fast, reliable, no external dependencies.\n* **E2E Tests:** Test the entire application from the user interface through to the database, simulating real user scenarios. Much slower and more fragile, but validate that the complete system works together correctly."
+        },
+        {
+          "q": "What is contract testing between microservices?",
+          "a": "Contract testing verifies that the API contract (request/response schema) between a consumer and a provider remains compatible as both evolve independently. Tools like Pact allow consumer teams to define their expectations, and provider teams run those contracts as tests to ensure they don't break consumers."
+        },
+        {
+          "q": "What is the purpose of `[Theory]` and `[InlineData]` in xUnit?",
+          "a": "`[Theory]` marks a test that runs multiple times with different input data. `[InlineData]` provides the input values for each run:\n\n```csharp\n[Theory]\n[InlineData(2, 2, 4)]\n[InlineData(3, 5, 8)]\npublic void Add_ReturnsCorrectSum(int a, int b, int expected) { ... }\n```"
+        },
+        {
+          "q": "What is observability in production systems?",
+          "a": "Observability is the ability to understand the internal state of a system from its external outputs. The three pillars are:\n* **Logs:** Timestamped records of discrete events.\n* **Metrics:** Numeric measurements over time (CPU, request count).\n* **Traces:** End-to-end request paths across distributed services. Together, they help diagnose production issues."
+        },
+        {
+          "q": "What is Application Performance Monitoring (APM)?",
+          "a": "APM tools (e.g., Azure Application Insights, Datadog, New Relic) continuously measure application performance metrics like response time, error rate, throughput, and dependency call durations. They alert teams when metrics exceed thresholds and provide distributed traces to diagnose root causes."
+        }
+      ]
+    },
+    {
+      "category": "C# Evolution",
+      "icon": "code",
+      "color": "var(--orange)",
+      "questions": [
+        {
+          "q": "What does the var keyword do in C#?",
+          "a": "`var` is used for implicit typing. The C# compiler infers the exact type of the variable based on the value assigned on the right side of the declaration at compile-time. It does not affect execution performance and requires initialization."
+        },
+        {
+          "q": "What is String Interpolation in C#?",
+          "a": "String interpolation uses the `$` prefix to insert variables or expressions directly inside a string literal. It is much more readable than using `string.Format` or string concatenation:\n\n```csharp\nstring message = $\"Hello, {user.Name}!\";\n```"
+        },
+        {
+          "q": "What is the Null-Conditional Operator (?.) and how does it prevent errors?",
+          "a": "The `?.` operator executes a member access or index access only if the operand is non-null; otherwise, it returns null without throwing a `NullReferenceException`:\n\n```csharp\nint? length = user?.Name?.Length;\n```"
+        },
+        {
+          "q": "What is the Null-Coalescing Operator (??) in C#?",
+          "a": "The `??` operator returns the left-hand operand if it is not null; otherwise, it returns the right-hand operand, providing a clean fallback value:\n\n```csharp\nstring displayName = user.Nickname ?? \"Guest\";\n```"
+        },
+        {
+          "q": "What are Auto-Implemented Properties in C#?",
+          "a": "Auto-implemented properties allow declaring a property without writing a backing field. The compiler automatically creates a private, anonymous field behind the scenes:\n\n```csharp\npublic class Product {\n    public int Id { get; set; }\n}\n```"
+        },
+        {
+          "q": "What are Expression-Bodied Members in C#?",
+          "a": "Expression-bodied members use the `=>` arrow syntax to provide concise implementations for simple methods, properties, or constructors:\n\n```csharp\npublic int GetDouble(int x) => x * 2;\n```"
+        },
+        {
+          "q": "What is a Ternary Operator in C#?",
+          "a": "The ternary operator `?:` is a shorthand for simple `if-else` statements. It evaluates a boolean condition and returns one of two values:\n\n```csharp\nstring status = (age >= 18) ? \"Adult\" : \"Minor\";\n```"
+        },
+        {
+          "q": "What are Generics in C#?",
+          "a": "Generics allow defining classes, structures, interfaces, or methods with placeholder types (e.g. `List<T>`). This allows code reuse, type safety, and avoids the boxing/unboxing overhead of using `object` references."
+        },
+        {
+          "q": "What is the difference between string and String in C#?",
+          "a": "There is no functional difference. `string` is a C# language keyword, while `String` (capital S) refers to the .NET class `System.String`. The compiler translates `string` directly into `System.String`."
+        },
+        {
+          "q": "What is the out keyword in C# method parameters?",
+          "a": "The `out` keyword passes arguments by reference. The called method *must* assign a value to the `out` parameter before it returns. Often used in TryParse patterns:\n\n```csharp\nif (int.TryParse(\"123\", out int result)) { ... }\n```"
+        },
+        {
+          "q": "What are Records in C# 9 and what are their advantages?",
+          "a": "Records are immutable reference types with value-based equality and automatic `ToString`, `Equals`, and `GetHashCode` implementations. They also support `with` expressions to create modified copies:\n\n```csharp\npublic record Person(string Name, int Age);\nvar updated = person with { Age = 31 };\n```"
+        },
+        {
+          "q": "What is Pattern Matching in C# and give an example?",
+          "a": "Pattern matching checks a value against a shape and extracts data from it. C# supports type patterns, property patterns, and switch expressions:\n\n```csharp\nstring Describe(object obj) => obj switch {\n    int n when n > 0 => \"Positive int\",\n    string s => $\"String: {s}\",\n    null => \"null\",\n    _ => \"Unknown\"\n};\n```"
+        },
+        {
+          "q": "What is a Primary Constructor in C# 12?",
+          "a": "Primary constructors allow declaring constructor parameters directly on the class declaration, automatically making them available as fields throughout the class body:\n\n```csharp\npublic class OrderService(IOrderRepository repo) {\n    public async Task<Order> GetAsync(int id) => await repo.GetByIdAsync(id);\n}\n```"
+        },
+        {
+          "q": "What is the init accessor and how does it help with immutability?",
+          "a": "The `init` accessor allows a property to be set only during object initialization (including object initializers), but not after. This gives you immutable properties that can still be set at construction time:\n\n```csharp\npublic class Invoice {\n    public decimal Amount { get; init; }\n}\n```"
+        },
+        {
+          "q": "What are Nullable Reference Types (NRT) in C# 8?",
+          "a": "NRT is a compiler feature that makes reference types non-nullable by default. You must explicitly mark a reference type as nullable with `?` (e.g. `string?`). The compiler then warns you when you dereference a potentially null value, reducing `NullReferenceException` bugs."
+        },
+        {
+          "q": "What is a delegate in C# and how does it relate to Func<> and Action<>?",
+          "a": "A delegate is a type-safe function pointer — a variable that holds a reference to a method. `Func<TResult>` is a built-in generic delegate that returns a value. `Action<T>` is a built-in delegate that returns void. They allow passing methods as arguments and defining callbacks."
+        },
+        {
+          "q": "What is a Lambda Expression in C#?",
+          "a": "A lambda expression is an anonymous function using `=>` syntax. It is commonly used with LINQ and delegates:\n\n```csharp\nvar evens = numbers.Where(n => n % 2 == 0);\nFunc<int, int> square = x => x * x;\n```"
+        },
+        {
+          "q": "What is LINQ (Language Integrated Query)?",
+          "a": "LINQ provides a unified query syntax for filtering, projecting, sorting, and aggregating data from different sources (collections, XML, databases) using C# method chaining or query syntax:\n\n```csharp\nvar result = orders.Where(o => o.Total > 100).OrderBy(o => o.Date).ToList();\n```"
+        },
+        {
+          "q": "What is the difference between ref and out parameters in C#?",
+          "a": "* **ref:** Passes a variable by reference. The variable must be initialized before being passed. The method may or may not assign a new value.\n* **out:** Passes a variable by reference. The variable does NOT need to be initialized before passing. The method MUST assign a value before returning."
+        },
+        {
+          "q": "What are extension methods in C#?",
+          "a": "Extension methods allow adding new methods to existing types without modifying or subclassing them. They are defined as static methods in a static class, with the first parameter prefixed with `this`:\n\n```csharp\npublic static string ToTitleCase(this string s) => ...\n// Usage:\n\"hello world\".ToTitleCase();\n```"
+        },
+        {
+          "q": "What is the difference between var and static readonly in C#?",
+          "a": "* **const:** Compile-time constant. Value is baked into the calling assembly at compile time. Must be a primitive or string.\n* **static readonly:** Runtime constant. Value is set once at startup. Can be any type, including objects. Use `static readonly` for constants that are objects or computed from runtime values."
+        },
+        {
+          "q": "What are tuples in C# and how do you use them?",
+          "a": "Tuples group multiple values into a single lightweight return type without defining a new class:\n\n```csharp\n(string Name, int Age) GetUser() => (\"Ana\", 30);\nvar (name, age) = GetUser(); // deconstruction\n```\nUse tuples for simple, short-lived groupings. For complex returns, prefer a named class or record."
+        },
+        {
+          "q": "What is the global using directive introduced in C# 10?",
+          "a": "`global using` applies a `using` directive to all files in the project, eliminating repetitive `using` statements at the top of every file:\n\n```csharp\n// In GlobalUsings.cs\nglobal using System.Text.Json;\nglobal using Microsoft.EntityFrameworkCore;\n```"
+        },
+        {
+          "q": "What is the Null-Coalescing Assignment Operator (??=) in C#?",
+          "a": "`??=` assigns the right-hand value to the left-hand variable only if it is currently null:\n\n```csharp\nusers ??= new List<User>(); // equivalent to: if (users == null) users = new List<User>();\n```\nUseful for lazy initialization patterns."
+        },
+        {
+          "q": "What is an Enum and how do you use Flags with it?",
+          "a": "An `enum` defines a named set of related integer constants. The `[Flags]` attribute allows combining enum values as a bitmask:\n\n```csharp\n[Flags]\npublic enum Permissions { Read = 1, Write = 2, Delete = 4 }\nvar userPerms = Permissions.Read | Permissions.Write;\nbool canWrite = userPerms.HasFlag(Permissions.Write); // true\n```"
+        }
+      ]
+    },
+    {
+      "category": "Leadership & Strategy",
+      "icon": "users",
+      "color": "var(--magenta)",
+      "questions": [
+        {
+          "q": "Why is code readability preferred over writing clever, complex code?",
+          "a": "Code is read and maintained by humans much more often than it is written. Clever, condensed code is hard to debug, review, and modify. Clear, well-named, readable code reduces technical debt and helps teams move faster."
+        },
+        {
+          "q": "What is a Pull Request (PR)?",
+          "a": "A Pull Request (PR) is a Git process where a developer proposes code changes from their branch to the main repository codebase. It allows team members to review the code, suggest improvements, run builds, and discuss changes before merging."
+        },
+        {
+          "q": "Why are code reviews important for engineering teams?",
+          "a": "Code reviews maintain code quality standards, identify bugs before they reach production, spread technical knowledge across the team, and align engineers on architecture patterns."
+        },
+        {
+          "q": "How should a Semi Senior developer handle unclear task requirements?",
+          "a": "Do not make assumptions or start writing code immediately. Communicate with product owners, tech leads, or business analysts to clarify the requirements, and document the decisions in the task description."
+        },
+        {
+          "q": "What is the 'Boy Scout Rule' in software development?",
+          "a": "The Boy Scout Rule states: \"Always leave the campground cleaner than you found it.\" In coding, this means clean up small issues (like fixing typos, renaming poor variables, or formatting code) in the file you are modifying, improving the codebase over time."
+        },
+        {
+          "q": "What is Git and how does it help in collaboration?",
+          "a": "Git is a distributed version control system. It tracks code history, allows multiple developers to work on different features concurrently using branches, and provides tools to merge changes and resolve code conflicts."
+        },
+        {
+          "q": "What is the purpose of writing good commit messages?",
+          "a": "Good commit messages explain *why* a change was made and *what* was changed. This helps team members understand code history when debugging, reviewing changes, or reverting commits."
+        },
+        {
+          "q": "How do you estimate software tasks as a developer?",
+          "a": "Estimate tasks by breaking them down into small, concrete sub-tasks. Factor in time for writing tests, code reviews, manual testing, and deployment. If a task has too many unknowns, recommend doing research (spike) first."
+        },
+        {
+          "q": "What is the difference between a branch merge and a rebase in Git?",
+          "a": "* **Merge:** Combines target and source branches, creating a new 'merge commit' in the history. Keeps the original history order intact.\n* **Rebase:** Moves the entire commit history of your branch to the tip of the target branch, creating a clean linear project history."
+        },
+        {
+          "q": "How should you document your C# code?",
+          "a": "Use XML comments (`///`) on public classes and interface methods to explain their behavior. Avoid writing comments that explain *what* the code does (since code should be self-explanatory); focus comments on explaining *why* a complex decision was made."
+        },
+        {
+          "q": "What is technical debt and how should a Semi Senior developer manage it?",
+          "a": "Technical debt is the accumulated cost of shortcuts, poor design decisions, or outdated code that makes future changes harder. Manage it by flagging it in code reviews, logging it in the backlog with business impact context, and advocating for regular refactoring time in sprint planning."
+        },
+        {
+          "q": "What is Agile methodology and what are its core values?",
+          "a": "Agile is an iterative software development framework. Its core values (from the Agile Manifesto) are: individuals and interactions over processes and tools, working software over documentation, customer collaboration over contract negotiation, and responding to change over following a plan."
+        },
+        {
+          "q": "What is a Sprint in Scrum?",
+          "a": "A Sprint is a fixed-length iteration (typically 1–4 weeks) in Scrum during which the team commits to completing a set of backlog items. Each sprint ends with a potentially shippable product increment and a retrospective to inspect and adapt the team's process."
+        },
+        {
+          "q": "How should you handle a production bug discovered by a customer?",
+          "a": "1. Acknowledge and communicate the issue to the team immediately.\n2. Assess impact and prioritize a hotfix.\n3. Reproduce the bug locally and write a test that captures it.\n4. Fix the root cause (not just the symptom).\n5. Deploy the fix with proper testing.\n6. Write a post-mortem to prevent recurrence."
+        },
+        {
+          "q": "What is pair programming and what are its benefits?",
+          "a": "Pair programming has two developers working together on the same code: a driver writes the code and a navigator reviews it in real time. Benefits include fewer bugs (immediate review), knowledge transfer between developers, better design decisions, and faster onboarding of junior developers."
+        },
+        {
+          "q": "What is a Definition of Done (DoD) in Scrum?",
+          "a": "The Definition of Done is a shared agreement on what criteria a task must meet before it can be considered complete. A typical DoD includes: code written, unit tests passing, code reviewed and approved, documentation updated, and deployed to staging."
+        },
+        {
+          "q": "How do you give constructive feedback during a code review?",
+          "a": "Focus on the code, not the person. Be specific about what could be improved and why. Suggest alternatives rather than just criticizing. Acknowledge good practices. Frame suggestions as questions when appropriate: 'Could we use `.AsNoTracking()` here to improve read performance?'"
+        },
+        {
+          "q": "What is a spike in Agile development?",
+          "a": "A spike is a time-boxed research or investigation task used to reduce uncertainty before estimating a feature. For example, spending two days evaluating two different caching libraries before committing to one. Spikes produce knowledge, not necessarily working code."
+        },
+        {
+          "q": "What is the difference between a task and a story in Scrum?",
+          "a": "* **Story (User Story):** Describes a feature from the user's perspective with business value: 'As a customer, I want to reset my password so that I can recover my account.'\n* **Task:** A specific technical unit of work needed to implement the story: 'Implement password reset email endpoint.'"
+        },
+        {
+          "q": "How do you approach learning new technology as a Semi Senior developer?",
+          "a": "Build a small proof-of-concept to get hands-on experience. Read the official documentation and follow a focused course or tutorial. Identify how the technology solves existing problems in your current stack. Share findings with your team and propose a realistic adoption plan if relevant."
+        },
+        {
+          "q": "What is the purpose of a Retrospective meeting in Scrum?",
+          "a": "A Retrospective is a regular team meeting (typically at the end of each sprint) to reflect on the team's processes and collaboration: what went well, what didn't, and what actions to take next sprint to improve. It is a key driver of continuous team improvement."
+        },
+        {
+          "q": "What is the DRY (Don't Repeat Yourself) principle?",
+          "a": "DRY states that every piece of knowledge or logic should have a single, authoritative representation in the system. Duplicate code leads to inconsistencies when one copy is updated and others are not. Extract shared logic into reusable methods, base classes, or libraries."
+        },
+        {
+          "q": "What does YAGNI stand for and why does it matter?",
+          "a": "'You Aren't Gonna Need It' is a principle that discourages adding functionality until it is actually required. Building speculative features increases complexity, requires maintenance, and often results in code that never gets used. Implement what is needed today."
+        },
+        {
+          "q": "How should you respond when you don't know the answer to a technical question in a meeting?",
+          "a": "Be honest. Say 'I'm not sure, but I'll find out and follow up.' Guessing damages credibility if you're wrong. After the meeting, research the answer or ask a more experienced colleague. Follow up with the answer in writing to demonstrate reliability."
+        },
+        {
+          "q": "What is the purpose of a standup meeting?",
+          "a": "A standup (daily scrum) is a short daily synchronization meeting (15 minutes) where each team member answers: What did I do yesterday? What will I do today? Are there any blockers? The goal is to surface impediments early and keep the team aligned, not to give a detailed status report."
+        }
+      ]
+    },
+    {
+      "category": "Scenarios & Debugging",
+      "icon": "wrench",
+      "color": "var(--yellow)",
+      "questions": [
+        {
+          "q": "Scenario: You get a 'NullReferenceException' in production. How do you find the root cause?",
+          "a": "1. **Check the Stack Trace:** Look at the logs to find the exact file name and line number.\n2. **Identify the variables:** Check which variable on that line was evaluated as null.\n3. **Inspect data:** Check if the database query returned null or if an input argument was missing.\n4. **Add a guard clause:** Add null checks (`if (user is null)`) to prevent future exceptions."
+        },
+        {
+          "q": "Scenario: A client gets a 401 Unauthorized response from your API. What is the cause?",
+          "a": "The client has not provided valid authentication credentials. Check if they sent the JWT token, if it is expired, if the token format is correct, or if the `Authorization: Bearer <token>` header was correctly attached to the request headers."
+        },
+        {
+          "q": "Scenario: Your local ASP.NET Core API fails to connect to the database. What do you check?",
+          "a": "1. Check the connection string in `appsettings.json`.\n2. Ensure the database server is running locally or in Docker.\n3. Check if local firewall settings or ports are blocking the connection.\n4. Run database migrations to ensure the database schema exists."
+        },
+        {
+          "q": "Scenario: Users complain that updating their profile is slow. Where do you start troubleshooting?",
+          "a": "1. Check the server logs for slow queries or high execution times.\n2. Use a profiler or print execution elapsed time for API steps.\n3. Ensure database queries are optimized, indexes exist on lookup keys, and the code doesn't suffer from N+1 query loops."
+        },
+        {
+          "q": "Scenario: A client application experiences CORS errors when calling your API. How do you resolve it?",
+          "a": "1. Check the console log to find the Origin URL allowed.\n2. Add the origin URL to the CORS configurations in `Program.cs`.\n3. Ensure the `app.UseCors()` middleware is called before authentication/authorization middleware in the startup sequence."
+        },
+        {
+          "q": "Scenario: An integration test fails on the build server but passes locally. What is the cause?",
+          "a": "Check for configuration differences (such as missing environment connection strings on the build agent), database state persistence (previous tests leaving data on the build agent), or port conflicts on the CI agent."
+        },
+        {
+          "q": "Scenario: Your API endpoint returns a 403 Forbidden status code. What does it mean?",
+          "a": "A 403 status code means the user is successfully authenticated, but they do not have permission to access the resource (e.g. they belong to the 'User' role, but the endpoint requires the 'Admin' role)."
+        },
+        {
+          "q": "Scenario: Your app has a typo in a production database column. How do you fix it safely?",
+          "a": "1. Write a DB migration to add the new column (correct spelling).\n2. Update the application code to write to both columns during updates.\n3. Run a SQL script to copy data from the old column to the new column.\n4. Deploy a new version that reads from the new column and drops the old column."
+        },
+        {
+          "q": "Scenario: You get a 'SocketException' when calling an external API. What does it mean?",
+          "a": "It indicates a network connection failure. The external API server might be down, the hostname could not be resolved, the connection was refused, or there is a local network firewall block."
+        },
+        {
+          "q": "Scenario: You want to update a NuGet dependency in your project. How do you ensure it does not break anything?",
+          "a": "1. Read the package release notes for breaking changes.\n2. Update the package version locally.\n3. Run all unit and integration tests (`dotnet test`).\n4. Manually test the critical application features that depend on the package."
+        },
+        {
+          "q": "Scenario: Your API response times suddenly spike in production. What is your diagnostic process?",
+          "a": "1. Check APM dashboards for slow endpoints and dependency calls.\n2. Review database query execution plans for recently added queries.\n3. Check CPU and memory usage for resource contention.\n4. Look for increased traffic volume that may be exceeding capacity.\n5. Check recent deployments — correlate the spike with any code change."
+        },
+        {
+          "q": "Scenario: A new developer accidentally pushed secrets to the public GitHub repository. What do you do?",
+          "a": "1. Immediately rotate/revoke the leaked credentials (API keys, passwords, connection strings).\n2. Remove the secrets from the repository history using `git filter-repo` or BFG Repo-Cleaner.\n3. Force-push to overwrite the remote history.\n4. Audit access logs for the compromised credentials.\n5. Implement pre-commit hooks or secret scanning tools to prevent recurrence."
+        },
+        {
+          "q": "Scenario: EF Core throws 'DbUpdateConcurrencyException'. What happened?",
+          "a": "A concurrency conflict occurred: two users read the same record and tried to update it simultaneously. EF Core detected that the record was already modified since it was read. Handle it by catching the exception, reloading the entity, and asking the user to retry or applying automatic conflict resolution logic."
+        },
+        {
+          "q": "Scenario: Your ASP.NET Core API is receiving valid requests but returning 500 errors randomly. What do you investigate?",
+          "a": "1. Check the exception logs for the specific error message and stack trace.\n2. Look for unhandled `NullReferenceException` or `InvalidOperationException`.\n3. Check for connection pool exhaustion (too many DB connections).\n4. Investigate if the error correlates with specific request patterns or times.\n5. Review recent deployments or configuration changes."
+        },
+        {
+          "q": "Scenario: You need to debug a performance bottleneck in a LINQ query. What tools and techniques do you use?",
+          "a": "1. Enable EF Core SQL logging to see generated queries.\n2. Use SQL Server Management Studio or `EXPLAIN` to analyze query execution plans.\n3. Check for missing indexes on filtered/joined columns.\n4. Look for client-side evaluation (LINQ operations running in memory instead of SQL).\n5. Use `AsNoTracking()` for read-only queries."
+        },
+        {
+          "q": "Scenario: Your Docker container starts then immediately exits. How do you diagnose it?",
+          "a": "1. Run `docker logs <container-id>` to see the startup error message.\n2. Try running the container interactively: `docker run -it <image> /bin/bash`.\n3. Check environment variables and connection strings in the container configuration.\n4. Verify that the application's entry point is correct in the Dockerfile."
+        },
+        {
+          "q": "Scenario: A developer on your team wrote a method that is 300 lines long. How do you address it?",
+          "a": "Raise it in the code review with a specific suggestion to extract logical sections into private helper methods with clear names. Explain the Single Responsibility Principle. Offer to pair program on the refactoring. Ensure the existing tests still pass after the refactor."
+        },
+        {
+          "q": "Scenario: You need to migrate data from an old database schema to a new one without downtime. What approach do you use?",
+          "a": "Use an Expand-Contract (or parallel change) migration:\n1. **Expand:** Add new columns alongside old ones and write to both.\n2. **Migrate:** Run a background job to populate the new columns from old data.\n3. **Switch reads:** Update the app to read from the new columns.\n4. **Contract:** Remove the old columns once all data is migrated."
+        },
+        {
+          "q": "Scenario: A junior developer's PR adds a `.Where()` call on a `List<T>` inside a repository method. What is the issue?",
+          "a": "If the repository returns `IQueryable`, calling `.ToList()` before the `.Where()` loads all records into memory and then filters in application code. This is client-side evaluation — for large tables it is a critical performance bug. The `.Where()` should be applied before materializing with `.ToList()` so it runs as SQL."
+        },
+        {
+          "q": "Scenario: A user reports that their data changes are lost after they click save. What do you investigate?",
+          "a": "1. Check that `SaveChangesAsync()` is being called and awaited.\n2. Verify the correct entity instance is being tracked by the DbContext (not a detached copy).\n3. Check for unhandled exceptions during save that silently swallow the error.\n4. Ensure the request isn't being handled by a Singleton DbContext (should be Scoped).\n5. Add logging around save operations to track when they execute."
+        },
+        {
+          "q": "Scenario: You need to add a new required column to a production database table with millions of rows. How do you do it safely?",
+          "a": "1. Add the column as nullable first (non-breaking migration).\n2. Deploy the app update that populates the new column.\n3. Run a batch script to backfill the value for existing rows.\n4. Once all rows have values, apply a second migration to add the NOT NULL constraint.\n5. This phased approach prevents downtime and avoids timeout errors on large table migrations."
+        },
+        {
+          "q": "Scenario: Your application logs show 'Connection pool was exhausted'. What is happening?",
+          "a": "Too many open database connections are being held simultaneously, exceeding the pool limit. Causes include: long-running transactions not committing, DbContext instances not being disposed (missing `using` or DI scope issue), or a sudden traffic spike. Check for Singleton DbContext registrations and ensure all connections are properly closed."
+        },
+        {
+          "q": "Scenario: Your feature branch has 30 commits. How do you clean it up before merging to main?",
+          "a": "Use `git rebase -i HEAD~30` (interactive rebase) to squash WIP commits, reorder, or rewrite commit messages. Combine related commits into logical, atomic units with clear messages. This makes the git history on `main` readable and useful for future `git bisect` or `git blame` operations."
+        },
+        {
+          "q": "Scenario: An API returns inconsistent results under concurrent load. What could be causing it?",
+          "a": "This is likely a race condition. Investigate: shared state without proper thread synchronization (missing `lock` or `Interlocked`), stale cached values being read while a write is in progress, or database-level concurrency issues like dirty reads under Read Uncommitted isolation. Add proper locking or use database transactions with appropriate isolation levels."
+        },
+        {
+          "q": "Scenario: You deployed a hotfix but the bug still appears in production. The deployment pipeline showed success. What do you check?",
+          "a": "1. Verify the correct Docker image tag or DLL version was deployed (check the health endpoint version).\n2. Check if there are multiple server instances and the load balancer is still routing some traffic to old instances.\n3. Confirm the correct environment configuration is active (not still pointing to a cached version).\n4. Clear any application-level caches that may be serving stale data."
+        }
+      ]
+    }
+  ],
+  "quizQuestions": [
+    {
+      "q": "Which of the following service lifetimes in ASP.NET Core DI creates a new service instance each time it is requested from the service container?",
+      "options": [
+        "Transient",
+        "Scoped",
+        "Singleton",
+        "Static"
+      ],
+      "correctIndex": 0,
+      "explanation": "Transient services are created each time they are requested from the service container. Scoped services are created once per request, and Singleton services are created once and shared globally."
+    },
+    {
+      "q": "Why is using StringBuilder preferred over string concatenation inside a loop?",
+      "options": [
+        "StringBuilder executes on a background thread.",
+        "Strings are immutable, so concatenation creates a new string object on the heap in each iteration, causing high memory usage.",
+        "StringBuilder automatically saves values to the database.",
+        "Strings do not support Unicode characters."
+      ],
+      "correctIndex": 1,
+      "explanation": "Since strings are immutable, modifying them inside a loop creates many temporary string objects on the heap, triggering frequent garbage collection. StringBuilder modifies its internal buffer, saving allocations."
+    },
+    {
+      "q": "What is the purpose of using .AsNoTracking() in Entity Framework Core queries?",
+      "options": [
+        "It deletes the entity from the database.",
+        "It turns off change tracking in EF Core, improving performance and memory usage for read-only operations.",
+        "It forces the query to bypass connection pooling.",
+        "It prevents other users from editing the database records."
+      ],
+      "correctIndex": 1,
+      "explanation": "By default, EF Core tracks changes for all queried entities to detect updates. For read-only actions, `.AsNoTracking()` avoids this overhead, making queries faster and saving memory."
+    },
+    {
+      "q": "What is the main cause of ThreadPool Starvation when invoking asynchronous code?",
+      "options": [
+        "Having too many async/await methods in the project.",
+        "Blocking threads synchronously by using .Result or .Wait() on asynchronous tasks under heavy load.",
+        "Enabling Server Garbage Collection.",
+        "Having SQL exceptions in your database connection string."
+      ],
+      "correctIndex": 1,
+      "explanation": "Calling `.Result` or `.Wait()` blocks a thread pool thread synchronously. Under high load, this blocks all worker threads, preventing async continuations from running and leading to deadlock and starvation."
+    },
+    {
+      "q": "Which of the following operators returns the left-hand operand if it is not null, otherwise returns the right-hand operand?",
+      "options": [
+        "?.",
+        "??",
+        "?:",
+        "??="
+      ],
+      "correctIndex": 1,
+      "explanation": "The null-coalescing operator `??` provides a fallback value if the left operand is null. The null-conditional operator `?.` returns null on null evaluation, and `??=` assigns a value if null."
+    },
+    {
+      "q": "In ASP.NET Core, where should the app.UseCors() middleware be placed in Program.cs relative to authentication?",
+      "options": [
+        "Before UseRouting()",
+        "After UseAuthorization()",
+        "After UseRouting() but before UseAuthorization()",
+        "At the very end of Program.cs"
+      ],
+      "correctIndex": 2,
+      "explanation": "CORS must check origins before evaluating credentials or user roles, so `app.UseCors()` should be placed after `app.UseRouting()` but before `app.UseAuthentication()` and `app.UseAuthorization()`."
+    },
+    {
+      "q": "What is the purpose of Mocking in unit testing?",
+      "options": [
+        "To test the database performance under load.",
+        "To simulate external dependencies like databases or APIs, isolating the business logic under test.",
+        "To translate C# code into Javascript automatically.",
+        "To verify the layout of the UI elements."
+      ],
+      "correctIndex": 1,
+      "explanation": "Mocks replace real system dependencies with fake implementations, allowing you to test a class's internal logic in isolation without making real database or HTTP network calls."
+    },
+    {
+      "q": "What happens if a user closes their browser tab during a long-running API call, assuming the API controller uses a CancellationToken?",
+      "options": [
+        "The API database connection is kept open indefinitely.",
+        "The CancellationToken notifies the API to abort the database query or task, saving resources.",
+        "The web server crashes immediately.",
+        "The browser automatically retries the API call."
+      ],
+      "correctIndex": 1,
+      "explanation": "If the client disconnects, ASP.NET Core triggers the `CancellationToken`. If passed down to the DB query or async loop, it throws a cancellation exception, aborting execution and freeing resources."
+    },
+    {
+      "q": "Which HTTP status code is returned when a user is successfully logged in, but does not have the permissions required to access a specific API resource?",
+      "options": [
+        "400 Bad Request",
+        "401 Unauthorized",
+        "403 Forbidden",
+        "404 Not Found"
+      ],
+      "correctIndex": 2,
+      "explanation": "401 indicates that the client is not authenticated (anonymous). 403 Forbidden indicates that the client is authenticated but does not possess the credentials (claims/roles) to access the resource."
+    },
+    {
+      "q": "What is the N+1 Query Problem in ORMs like EF Core?",
+      "options": [
+        "When the connection pool size is exceeded by 1 connection.",
+        "When parent records are loaded in 1 query, and their child records are loaded in N separate queries in a loop, causing excessive database roundtrips.",
+        "When you have more than one primary key on a table.",
+        "When a transaction is opened but never committed."
+      ],
+      "correctIndex": 1,
+      "explanation": "The N+1 problem occurs when lazy-loaded properties are evaluated inside a loop. Use Eager Loading (`.Include()`) to join the tables in SQL and load the entire graph in one single query."
+    },
+    {
+      "q": "If you assign one struct variable to another in C# (e.g. 'Point a = b;'), what is copied under the hood?",
+      "options": [
+        "A reference to the same object on the heap",
+        "A complete copy of the value type's data (field-by-field copy) on the stack",
+        "The compiler throws a compilation error",
+        "The memory address of the stack frame"
+      ],
+      "correctIndex": 1,
+      "explanation": "Structs are value types. Assigning one struct to another copies the entire value field-by-field on the stack. Classes (reference types) only copy the reference (pointer) to the heap."
+    },
+    {
+      "q": "When should you prefer defining an Interface over an Abstract Class in C#?",
+      "options": [
+        "When you want to define a behavior that can be implemented by multiple unrelated classes, or when you need multiple inheritance.",
+        "When you need to share code or default implementations with subclasses.",
+        "When you need to specify private fields for state storage.",
+        "When the class needs to declare static abstract members in .NET Framework 4.8."
+      ],
+      "correctIndex": 0,
+      "explanation": "Interfaces define capabilities that can be shared across unrelated classes and support multiple inheritance. Abstract classes are best when subclasses share common implementation or state."
+    },
+    {
+      "q": "What is the difference between the Select and SelectMany LINQ operators in C#?",
+      "options": [
+        "Select filters elements, while SelectMany projects them.",
+        "Select projects each element to a new form, whereas SelectMany flattens a sequence of sequences into a single sequence.",
+        "Select only works on arrays, while SelectMany works on dictionaries.",
+        "SelectMany performs asynchronous projections while Select is synchronous."
+      ],
+      "correctIndex": 1,
+      "explanation": "Select projects each item in a collection 1-to-1. SelectMany is a flattening projection that takes a collection of collections (like a list of lists) and flattens them into a single linear sequence (1-to-many)."
+    },
+    {
+      "q": "In C#, what is the difference between writing 'throw;' and 'throw ex;' inside a catch block?",
+      "options": [
+        "'throw;' terminates the thread, while 'throw ex;' continues execution.",
+        "'throw;' preserves the original call stack trace, while 'throw ex;' overwrites the stack trace, making the current catch block the origin of the exception.",
+        "'throw ex;' is faster and uses less memory than 'throw;'.",
+        "There is no difference; they compile to the exact same IL code."
+      ],
+      "correctIndex": 1,
+      "explanation": "Using throw; re-throws the existing exception while keeping the call stack intact. Using throw ex; resets the stack trace, making debugging harder because it hides where the exception originally occurred."
+    },
+    {
+      "q": "Which REST HTTP status code should a Web API controller return after successfully creating a new database resource?",
+      "options": [
+        "200 OK",
+        "201 Created",
+        "202 Accepted",
+        "204 No Content"
+      ],
+      "correctIndex": 1,
+      "explanation": "REST API conventions dictate that 201 Created should be returned when a resource is successfully created, often accompanied by a Location header pointing to the new resource."
+    },
+    {
+      "q": "In C#, what does the type 'int?' represent under the hood?",
+      "options": [
+        "A compiler trick that compiles to double.",
+        "An alias for the System.Nullable<int> structure, wrapping a value and a boolean flag.",
+        "A pointer to a stack-allocated integer.",
+        "A reference type wrapper stored on the heap."
+      ],
+      "correctIndex": 1,
+      "explanation": "int? is syntactic sugar for Nullable<int>. It is a struct (value type) containing two properties: HasValue (boolean) and Value (the underlying value of type int)."
+    },
+    {
+      "q": "What is the difference between an INNER JOIN and a LEFT JOIN in SQL?",
+      "options": [
+        "INNER JOIN returns all rows from both tables, while LEFT JOIN returns only matching rows.",
+        "INNER JOIN returns only rows that have matching values in both tables, whereas LEFT JOIN returns all rows from the left table and matched rows from the right table.",
+        "LEFT JOIN is always faster because it bypasses indexes.",
+        "INNER JOIN can only be used on primary keys."
+      ],
+      "correctIndex": 1,
+      "explanation": "An INNER JOIN requires matches in both tables to return a row. A LEFT JOIN returns all records from the left table, and the matching records from the right table (returning NULL if there is no match)."
+    },
+    {
+      "q": "What is a primary difference between merging and rebasing in Git?",
+      "options": [
+        "Merging deletes the history, whereas rebasing preserves all commit IDs.",
+        "Merging combines changes by creating a new merge commit, preserving historical branches, while rebasing reapplies commits on top of another base tip, creating a flat linear history.",
+        "Rebasing can only be done on remote repositories.",
+        "Merging changes the author of all commits to the current user."
+      ],
+      "correctIndex": 1,
+      "explanation": "Merging preserves the exact chronological branch history with a merge commit. Rebasing rewrites history by moving the base of a branch to another commit, resulting in a cleaner linear commit timeline but rewriting commit hashes."
+    },
+    {
+      "q": "Which of the following is the best practical application of the Single Responsibility Principle (SRP)?",
+      "options": [
+        "A class should contain only one method.",
+        "A class should have only one reason to change, meaning it handles one cohesive feature or responsibility.",
+        "All services in an application should inherit from a single base class.",
+        "A controller should handle routing, database queries, and business logic to avoid file sprawl."
+      ],
+      "correctIndex": 1,
+      "explanation": "SRP means a class should have one focused responsibility. If a class handles database access, formatting, and emailing, it has multiple reasons to change and should be split."
+    },
+    {
+      "q": "How does ASP.NET Core determine which environment configuration files (e.g. appsettings.Development.json) to load?",
+      "options": [
+        "By reading the computer's CPU manufacturer.",
+        "By checking the value of the 'ASPNETCORE_ENVIRONMENT' environment variable (e.g. Development, Production).",
+        "By checking the current system time.",
+        "By checking if the web browser is Chrome or Edge."
+      ],
+      "correctIndex": 1,
+      "explanation": "The runtime reads the ASPNETCORE_ENVIRONMENT environment variable. If set to Development, it loads appsettings.Development.json overriding base configurations."
+    }
+  ]
+}

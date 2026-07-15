@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>.NET IQ - Interactive Study Guide & Quiz</title>
+    <meta name="description" content="An interactive study guide and scenario-based quiz for Senior and Principal .NET Engineers preparing for system architecture, memory, and performance interviews.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="app-sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon"><i data-lucide="infinity"></i></span>
+                    <div class="logo-text">
+                        <h1>.NET IQ</h1>
+                    </div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" id="btn-dashboard" onclick="switchTab('dashboard')">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-btn" id="btn-study" onclick="switchTab('study')">
+                    <i data-lucide="book-open"></i>
+                    <span>Study Guide</span>
+                </button>
+                <button class="nav-btn" id="btn-quiz" onclick="switchTab('quiz')">
+                    <i data-lucide="award"></i>
+                    <span>Practice Quiz</span>
+                </button>
+                <button class="nav-btn" id="btn-mindmaps" onclick="switchTab('mindmaps')">
+                    <i data-lucide="network"></i>
+                    <span>Mindmaps</span>
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="stats-mini">
+                    <div class="stat-row">
+                        <span>Study Progress:</span>
+                        <span id="mini-progress-txt">0%</span>
+                    </div>
+                    <div class="stat-progress-bar">
+                        <div class="stat-progress-fill" id="mini-progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- Top Header -->
+            <header class="app-header">
+                <div class="header-welcome">
+                    <h2 id="header-title">Developer Dashboard</h2>
+                    <p id="header-subtitle">Welcome back. Track your learning and challenge your Principal engineering skills.</p>
+                </div>
+                <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
+                    <div class="level-selector-wrap">
+                        <label for="level-select" class="level-label"><i data-lucide="sliders"></i> Target Level:</label>
+                        <select id="level-select" class="level-select glass" onchange="changeLevel(this.value)">
+                            <option value="principal">Principal Engineer</option>
+                            <option value="senior">Senior Developer</option>
+                            <option value="semisenior" selected>Semi Senior Developer</option>
+                        </select>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Tab: Dashboard -->
+            <section id="tab-dashboard" class="tab-content active">
+                <!-- Stats Row -->
+                <div class="stats-grid">
+                    <div class="stat-card glass">
+                        <div class="stat-icon" style="background-color: rgba(139, 92, 246, 0.15); color: var(--violet);">
+                            <i data-lucide="book-open"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Questions Mastered</h3>
+                            <div class="stat-number"><span id="stats-mastered-count">0</span> / <span id="stats-total-count">250</span></div>
+                            <p>Active study guide questions</p>
+                        </div>
+                    </div>
+                    <div class="stat-card glass">
+                        <div class="stat-icon" style="background-color: rgba(20, 184, 166, 0.15); color: var(--teal);">
+                            <i data-lucide="check-circle2"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Mastery Rating</h3>
+                            <div class="stat-number" id="stats-percentage">0%</div>
+                            <p>Based on study progress</p>
+                        </div>
+                    </div>
+                    <div class="stat-card glass">
+                        <div class="stat-icon" style="background-color: rgba(244, 63, 94, 0.15); color: var(--pink);">
+                            <i data-lucide="award"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Assessment Score</h3>
+                            <div class="stat-number" id="stats-quiz-score">-</div>
+                            <p>Highest scenario rating</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Domain Grid Title -->
+                <div class="section-title">
+                    <h3>Focus Domains</h3>
+                    <p>Select a domain to study its core questions and architecture explanations.</p>
+                </div>
+
+                <!-- Domains Grid -->
+                <div class="domains-grid" id="domains-container">
+                    <!-- Dynamic domain cards will be rendered here by JS -->
+                </div>
+            </section>
+
+            <!-- Tab: Study Guide -->
+            <section id="tab-study" class="tab-content">
+                <div class="study-layout">
+                    <!-- Categories Sidebar -->
+                    <div class="study-sidebar glass">
+                        <h3>Study Topics</h3>
+                        <div class="study-topics-list" id="study-topics-list">
+                            <!-- Dynamic list of topic buttons -->
+                        </div>
+                    </div>
+
+                    <!-- Study Panel -->
+                    <div class="study-panel">
+                        <div class="study-header glass">
+                            <div class="topic-info">
+                                <span class="topic-badge" id="study-topic-badge" style="background-color: var(--violet);">System Architecture</span>
+                                <h2 id="study-topic-title">System Architecture & Design Patterns</h2>
+                            </div>
+                            <div class="topic-actions">
+                                <button class="btn btn-secondary" onclick="markAllCompleted()">
+                                    <i data-lucide="check-square"></i>
+                                    <span>Mark All Mastered</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Questions List -->
+                        <div class="questions-list" id="questions-list">
+                            <!-- Dynamic question panels will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Practice Quiz -->
+            <section id="tab-quiz" class="tab-content">
+                <div class="quiz-container">
+                    <!-- Quiz Intro State -->
+                    <div id="quiz-intro" class="quiz-card-wrapper glass text-center">
+                        <div class="quiz-intro-icon">
+                            <i data-lucide="graduation-cap"></i>
+                        </div>
+                        <h2 id="quiz-intro-title">Scenario-Based Principal Assessment</h2>
+                        <p class="quiz-intro-desc" id="quiz-intro-desc">
+                            This practice quiz evaluates your architectural judgment, performance diagnostics, and trade-off analysis.
+                            It consists of 20 advanced scenario-based questions designed for Principal-level validation.
+                        </p>
+                        <div class="quiz-info-cards">
+                            <div class="quiz-info-card">
+                                <i data-lucide="help-circle"></i>
+                                <h4>20 Scenarios</h4>
+                                <p>Deep technical cases</p>
+                            </div>
+                            <div class="quiz-info-card">
+                                <i data-lucide="clock"></i>
+                                <h4>Self-Paced</h4>
+                                <p>No timer pressure</p>
+                            </div>
+                            <div class="quiz-info-card">
+                                <i data-lucide="shield-check"></i>
+                                <h4>Detailed Analysis</h4>
+                                <p>Every answer explained</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-large" onclick="startQuiz()">
+                            <span>Start Assessment</span>
+                            <i data-lucide="arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- Quiz Active State -->
+                    <div id="quiz-active" class="quiz-card-wrapper glass hidden">
+                        <!-- Quiz Header -->
+                        <div class="quiz-active-header">
+                            <span class="quiz-progress-text">Question <span id="quiz-current-num">1</span> of <span id="quiz-total-num">20</span></span>
+                            <div class="quiz-progress-track">
+                                <div class="quiz-progress-bar" id="quiz-progress-bar" style="width: 5%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Question Display -->
+                        <div class="quiz-question-container">
+                            <h3 id="quiz-question-text">Scenario Question Text</h3>
+                        </div>
+
+                        <!-- Options List -->
+                        <div class="quiz-options-list" id="quiz-options-list">
+                            <!-- Dynamic buttons for options -->
+                        </div>
+
+                        <!-- Explanation Panel (Hidden by default, shown on select) -->
+                        <div class="quiz-explanation-panel hidden" id="quiz-explanation-panel">
+                            <div class="explanation-header">
+                                <span class="exp-badge" id="explanation-status-badge">Correct</span>
+                                <h4>Explanation & Architecture Analysis</h4>
+                            </div>
+                            <div class="explanation-content" id="quiz-explanation-content">
+                                Explanation text...
+                            </div>
+                        </div>
+
+                        <!-- Quiz Action Button -->
+                        <div class="quiz-actions hidden" id="quiz-actions-container">
+                            <button class="btn btn-primary" id="btn-next-question" onclick="nextQuestion()">
+                                <span>Next Scenario</span>
+                                <i data-lucide="arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Results State -->
+                    <div id="quiz-results" class="quiz-card-wrapper glass text-center hidden">
+                        <div class="results-score-circle">
+                            <div class="score-percent" id="results-score-percent">0%</div>
+                            <div class="score-fraction"><span id="results-score-num">0</span> / <span id="results-total-num">20</span></div>
+                        </div>
+                        <h2 id="results-title">Assessment Completed</h2>
+                        <p class="results-subtitle" id="results-subtitle">Here is your technical ranking evaluation.</p>
+
+                        <!-- Rank Card -->
+                        <div class="rank-card" id="results-rank-card">
+                            <div class="rank-badge" id="results-rank-badge">Senior Engineer</div>
+                            <p class="rank-desc" id="results-rank-desc">Excellent baseline knowledge. Keep studying memory optimization and system patterns to master the Principal role.</p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="results-actions">
+                            <button class="btn btn-secondary" onclick="restartQuiz()">
+                                <i data-lucide="rotate-ccw"></i>
+                                <span>Retake Assessment</span>
+                            </button>
+                            <button class="btn btn-primary" onclick="switchTab('study')">
+                                <i data-lucide="book-open"></i>
+                                <span>Review Study Topics</span>
+                            </button>
+                        </div>
+                    </div>
+            </section>
+            
+            <!-- Tab: Mindmaps -->
+            <section id="tab-mindmaps" class="tab-content">
+                <div class="mindmaps-layout">
+                    <!-- Categories Sidebar -->
+                    <div class="mindmaps-sidebar glass">
+                        <h3>Topics</h3>
+                        <div class="mindmaps-list" id="mindmaps-list">
+                            <!-- Dynamic list of mindmap buttons -->
+                        </div>
+                    </div>
+
+                    <!-- Mindmap Viewport -->
+                    <div class="mindmap-viewport glass">
+                        <!-- Viewport scroll wrapper -->
+                        <div class="mindmap-canvas-container" id="mindmap-canvas-container">
+                            <div class="mindmap-canvas" id="mindmap-canvas">
+                                <svg class="mindmap-svg" id="mindmap-svg"></svg>
+                                <div class="mindmap-nodes-container" id="mindmap-nodes-container"></div>
+                            </div>
+                        </div>
+
+                        <!-- Side detail panel -->
+                        <div class="node-details-panel hidden" id="node-details-panel">
+                            <div class="details-header">
+                                <h4 id="details-node-name">Concept Details</h4>
+                                <button class="close-details-btn" onclick="closeNodeDetails()">
+                                    <i data-lucide="x"></i>
+                                </button>
+                            </div>
+                            <div class="details-body" id="details-node-content">
+                                <!-- Dynamic detail content -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay glass hidden">
+        <div class="loader-content">
+            <div class="loader-spinner"></div>
+            <p>Loading data...</p>
+        </div>
+    </div>
+
+    <!-- Configuration Setup Required Overlay -->
+    <div id="setup-overlay" class="setup-overlay glass hidden">
+        <div class="setup-card glass">
+            <i data-lucide="database-backup" class="setup-icon"></i>
+            <h2>Supabase Configuration Required</h2>
+            <p>To load the questions and scenario simulator, connect the application with your Supabase project:</p>
+            <ol>
+                <li>Copy <code>config.example.js</code> as <code>config.js</code> in the project root.</li>
+                <li>Fill in your credentials (<code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code>) in <code>config.js</code>.</li>
+                <li>Create the tables in Supabase by running the script in <a href="schema.sql" target="_blank"><code>schema.sql</code></a> from your console's SQL Editor.</li>
+                <li>Create the <code>.env</code> file from <code>.env.example</code> and run <code>node migrate_to_supabase.js</code> to populate the database.</li>
+            </ol>
+            <button onclick="window.location.reload()" class="action-btn">
+                <i data-lucide="refresh-cw"></i> Reload Application
+            </button>
+        </div>
+    </div>
+
+    <!-- Data & Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="mindmaps_data.js?v=4.0.1"></script>
+    <script src="app.js?v=4.0.1"></script>
+</body>
+</html>

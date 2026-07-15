@@ -1,0 +1,1296 @@
+{
+  "studyData": [
+    {
+      "category": "System Architecture",
+      "icon": "layers",
+      "color": "var(--violet)",
+      "questions": [
+        {
+          "q": "How do you design for Aggregates and Aggregate Roots in Domain-Driven Design (DDD) to ensure transactional consistency in a distributed .NET environment?",
+          "a": "In DDD, an Aggregate is a cluster of domain objects that can be treated as a single unit. The Aggregate Root is the gatekeeper.\n\n**1. Boundary Rule:** Transactions must only span a single Aggregate instance. Any changes to other aggregates must be handled using Eventual Consistency (via Domain Events and integration events).\n\n**2. Implementation in C#:**\n* Protect state mutations: The root entity has private/protected setters and public methods expressing domain behavior (e.g., `Order.AddLineItem(...)`).\n* Inner entities cannot be accessed directly; mutations go through the root.\n* Use `DbContext` with EF Core to map the aggregate, using Owned Types (`OwnsOne`, `OwnsMany`) for value objects.\n\n**3. Transactional consistency:** Apply the Outbox Pattern. When the DbContext saves changes, it saves both the domain state and an Outbox message in the same transaction. A background worker (using `BackgroundService`) then publishes the event."
+        },
+        {
+          "q": "Monolith vs. Microservices: How do you mathematically and architecturally determine the point at which a .NET monolith should be decomposed?",
+          "a": "Decomposition shouldn't be based on trends. It should be based on:\n\n**1. Organizational Scale (Conway's Law):** If a single codebase has >3 feature teams competing for deployments, deployment pipeline contention increases. Decompose to align team boundaries with domain boundaries.\n**2. Resource Scaling Disparities:** If 5% of the codebase (e.g., PDF generation) consumes 95% of CPU/Memory or has erratic spikes, keeping it in the monolith forces scaling the entire monolith. Decomposing allows isolated container scaling.\n**3. Database Contention:** Look at lock wait times in SQL Server. If multiple modules are locked on the same tables, they are tightly coupled.\n**4. Decoupling Strategy in .NET:** Start by creating a *Modular Monolith*. Enforce boundaries using C# project references, internal interfaces, and separate DB schemas. Once logical boundaries are solid, extracting a module to a microservice is simple."
+        },
+        {
+          "q": "Explain CQRS and how it is implemented in .NET. What are the synchronization trade-offs between read and write databases?",
+          "a": "CQRS (Command Query Responsibility Segregation) separates mutations (Commands) from reads (Queries).\n\n**1. Implementation:** Use MediatR in .NET. Commands (e.g., `CreateOrderCommand`) return `void` or a simple ID and mutate the write database. Queries (e.g., `GetOrderByIdQuery`) use a fast, read-optimized database (like Redis, Elasticsearch, or a read-replica) and return DTOs.\n**2. Write Side:** Optimizes for write performance, consistency, and validation. Often uses EF Core.\n**3. Read Side:** Optimizes for rapid projection, filtering, and retrieval. Uses Dapper or direct SQL.\n**4. Synchronization Trade-offs:**\n* *Synchronous (Dual Writes):* Writing to both in one transaction. Cons: Latency, distributed transaction complexity, write fails if read DB is down.\n* *Asynchronous (Eventual Consistency):* Write side publishes an event. A consumer updates the read model. Cons: 'Read-your-own-writes' lag.\n\n**Mitigation:** Use client-side optimistic UI or return the transient representation in the command response so the UI looks updated immediately."
+        },
+        {
+          "q": "How does Event Sourcing differ from traditional state persistence? How do you implement Snapshots in C#?",
+          "a": "Traditional persistence saves the current state. Event Sourcing stores the state as a sequence of immutable events (e.g., `OrderCreated`, `ItemAdded`).\n\n**1. State Reconstitution:** To get the current state, load all events for an aggregate ID from the event store and replay them in order.\n**2. Snapshots:** Replaying millions of events is slow. A snapshot saves the state at event version `N` (e.g., every 100 events).\n**3. C# Example:**\n```csharp\npublic class OrderAggregate {\n    public int Version { get; private set; }\n    public void Replay(IEnumerable<IEvent> events) {\n        foreach(var ev in events) {\n            Apply(ev);\n            Version++;\n        }\n    }\n    public OrderSnapshot CreateSnapshot() => new OrderSnapshot(Id, Total, Version);\n    public void Restore(OrderSnapshot snapshot) {\n        Id = snapshot.Id;\n        Total = snapshot.Total;\n        Version = snapshot.Version;\n    }\n}\n```"
+        },
+        {
+          "q": "How do you design a resilient Saga Pattern in .NET without relying on distributed transactions (MSDTC)?",
+          "a": "Since MSDTC is not supported in modern cloud environments or .NET Core on Linux, Sagas coordinate transactions across multiple microservices.\n\n**1. Choreography:** Services publish events. Other services listen and react. Cons: hard to trace, cyclic dependencies.\n**2. Orchestration (Recommended):** A central Orchestrator (e.g., using MassTransit State Machine or Temporal) coordinates the workflow.\n**3. Resilience Strategy:**\n* *Idempotency:* Every saga step must be idempotent. Use unique `MessageId` or `CorrelationId` to deduplicate.\n* *Compensating Transactions:* If step 3 (Payment) fails, the orchestrator triggers compensating events for step 2 (Inventory) and step 1 (Order Reservation) to revert changes.\n* *State Persistence:* Persist the saga state machine in a relational DB using optimistic concurrency (`RowVersion` in SQL Server)."
+        },
+        {
+          "q": "Explain the Outbox Pattern. Why is it essential for microservice reliability, and how do you implement it in .NET?",
+          "a": "The Outbox Pattern guarantees at least-once delivery of events without using 2PC (Two-Phase Commit).\n\n**1. The Problem:** If you update the database and then publish to RabbitMQ, the publisher might fail after the DB commit. If you publish first, the DB commit might fail.\n**2. The Solution:** Save the domain changes and the outbox message (event payload serialized as JSON) inside the *same database transaction*.\n**3. Implementation in .NET:**\n* Create an `OutboxMessage` table.\n* Inside EF Core's `SaveChangesAsync()`, extract domain events from entities and append them as `OutboxMessage` records.\n* Run a `BackgroundService` that polls the table (e.g., using SQL Server's `OUTPUT` clause or `SELECT FOR UPDATE SKIP LOCKED` for Postgres) to pick up unprocessed messages, publish them to the broker, and mark them as processed."
+        },
+        {
+          "q": "How does Clean/Hexagonal Architecture decouple domain logic from external dependencies in ASP.NET Core?",
+          "a": "Clean Architecture enforces the Dependency Inversion Principle. Dependencies flow inward.\n\n**1. Core/Domain Layer:** Contains entities, value objects, domain logic, and interface definitions (e.g., `IRepository`). It has zero dependencies on external libraries.\n**2. Application Layer:** Contains use cases, command/query handlers (MediatR), and validators. It depends only on the Domain Layer.\n**3. Infrastructure Layer:** Implements interfaces defined in Domain/Application (e.g., `SqlRepository` implementing `IRepository`). It depends on EF Core, third-party APIs, and Cloud SDKs.\n**4. Presentation/API Layer:** The entry point. Configures DI, routes, middleware.\n**5. Decoupling Benefit:** You can replace SQL Server with MongoDB by writing a new repository in Infrastructure and modifying the DI container setup in the API, without touching a single line of business logic in the Core."
+        },
+        {
+          "q": "Explain the CAP Theorem. Give concrete examples of how you choose between Consistency and Availability in a C# enterprise system.",
+          "a": "The CAP Theorem states that in the event of a network partition (P), a distributed system can guarantee either Consistency (C) or Availability (A), but not both.\n\n**1. AP (Availability/Partition Tolerance):** The system remains operational, but nodes might return stale data.\n* *Example:* Amazon shopping cart. If a node is partitioned, let the user add items. Resolve conflicts later (eventual consistency). In .NET, use Redis or CosmosDB with Session/Eventual consistency levels.\n**2. CP (Consistency/Partition Tolerance):** The system blocks writes/reads until all nodes agree, returning errors if it can't guarantee consistency.\n* *Example:* Bank account balance transfer. In .NET, lock the resource using distributed locking (e.g., RedLock via Redis) or transactions in SQL Server to ensure balance accuracy at the cost of blocking users during a partition."
+        },
+        {
+          "q": "How do you design and implement the Strangler Fig Pattern to migrate a legacy ASP.NET MVC 4.8 monolith to .NET 9?",
+          "a": "The Strangler Fig Pattern gradually replaces parts of a legacy system with a new application until the old one is entirely replaced.\n\n**1. API Gateway:** Place a gateway (e.g., YARP - Yet Another Reverse Proxy) in front of both the legacy app and the new .NET 9 app.\n**2. Routing:** YARP routes legacy URLs to the old app by default. As you rewrite endpoints in .NET 9, configure YARP to route those specific paths to the new service.\n**3. Session Sharing:** If the apps must share authentication, configure them to share ASP.NET Data Protection keys (using Redis or a shared network folder) and map the legacy forms auth ticket to JWT or ASP.NET Core Identity cookie.\n**4. Database Sharing:** During migration, both apps might access the same database. Enforce strict API boundaries as soon as possible to avoid shared database anti-patterns."
+        },
+        {
+          "q": "How do you design a Multi-Tenant architecture in ASP.NET Core with tenant isolation at the database level?",
+          "a": "Multi-tenant architectures isolate data per tenant.\n\n**1. Strategies:**\n* *Shared Database, Shared Schema (Logical Isolation):* Use query filters. In EF Core, apply a Global Query Filter: `builder.Entity<Product>().HasQueryFilter(p => p.TenantId == _tenantProvider.TenantId)`.\n* *Shared Database, Separate Schemas:* Change schema dynamically on connection.\n* *Separate Databases (Physical Isolation - Safest):* Each tenant has its own connection string.\n**2. Dynamic DbContext resolution:**\n```csharp\npublic class TenantDbContext : DbContext {\n    private readonly ITenantProvider _tenantProvider;\n    public TenantDbContext(DbContextOptions<TenantDbContext> options, ITenantProvider tenantProvider) \n        : base(options) {\n        _tenantProvider = tenantProvider;\n    }\n    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {\n        optionsBuilder.UseSqlServer(_tenantProvider.GetConnectionString());\n    }\n}\n```\n**3. Tenant Provider:** Resolves tenant ID via HTTP request headers, query parameters, host name, or JWT claims inside a scoped service."
+        },
+        {
+          "q": "How do you design and implement the Database-per-Service pattern in .NET, and how do you handle cross-service reports?",
+          "a": "In Database-per-Service, each microservice owns its private database. Other services cannot access it directly.\n\n**1. Architecture:** Access is mediated exclusively via APIs (HTTP/gRPC) or message streams.\n**2. Cross-Service Reports:** Never use cross-database JOINs. Instead, implement a dedicated reporting service that consumes integration events from other services and populates a consolidated read-optimized database (such as Elasticsearch or a SQL data warehouse)."
+        },
+        {
+          "q": "Explain Context Mapping in DDD and the difference between Shared Kernel, Customer-Supplier, and Conformist relationships.",
+          "a": "Context Mapping describes how Bounded Contexts interact and share data:\n* **Shared Kernel:** Contexts share a common subset of the domain model and database schema. High coupling; changes require agreement from both teams.\n* **Customer-Supplier:** The supplier must deliver what the customer needs. The customer's requirements dictate the supplier's delivery schedule.\n* **Conformist:** The customer context conforms to the supplier's model because it has no power to negotiate changes (e.g., integrating with a dominant legacy system or large external service)."
+        },
+        {
+          "q": "What is Event Storming and how does it translate directly to namespace structure and project layout in C#?",
+          "a": "Event Storming is a collaborative workshop to discover the domain model using events, commands, and aggregates. Orange sticky notes represent Domain Events (e.g., `InvoiceGenerated`), which translate to C# record classes in the `Domain.Events` namespace. Blue notes (Commands, e.g. `GenerateInvoice`) map to request records in the `Application.Features` namespace. Aggregates (yellow notes) map to aggregate root classes within the `Domain.Aggregates` folder."
+        },
+        {
+          "q": "How do you design a high-throughput, low-latency microservice architecture using the Actor Model (e.g., Microsoft Orleans or Dapr)?",
+          "a": "The Actor Model models the system as a set of isolated, stateful actors that communicate asynchronously. Microsoft Orleans hosts virtual actors in memory (Silos), scaling them across servers automatically. Since actors process messages sequentially, they avoid lock contention and race conditions. State is loaded once and persisted using granular grain storage, removing DB read bottlenecks."
+        },
+        {
+          "q": "What are the latency, throughput, and reliability trade-offs between Synchronous HTTP/gRPC vs. Asynchronous Message-Driven communication?",
+          "a": "* **Synchronous (HTTP/gRPC):** Low complexity, immediate response. Trade-offs: temporal coupling (both services must be online), cascading latency spikes, and thread pool depletion under high concurrency.\n* **Asynchronous (RabbitMQ/Kafka):** High throughput, temporal decoupling (services can fail/reboot independently), and automatic retry queues. Trade-offs: complex distributed tracing, eventual consistency, and increased architecture complexity."
+        },
+        {
+          "q": "Explain the Outbox Pattern combined with Change Data Capture (CDC) using Debezium vs. a polling background worker.",
+          "a": "* **Polling Worker (BackgroundService):** Runs SQL queries (e.g., `SELECT TOP 100 ... WHERE Processed = 0`) to find outbox messages. Simple to write, but poll queries cause lock contention on the outbox table under high throughput.\n* **CDC (Debezium/Kafka Connect):** Monitors the database transaction log (e.g., SQL Server transaction log or Postgres WAL) directly, extracting outbox inserts as they commit. Bypasses the SQL database engine entirely, having zero performance impact on the database."
+        },
+        {
+          "q": "How do you handle schema versioning and zero-downtime database upgrades in a microservices architecture?",
+          "a": "Enforce the Expand and Contract pattern across deployments:\n1. **Expand:** Deploy database migrations that add new columns/tables as nullable. Run a background backfill. Deploy C# code that writes to both old and new schema structures.\n2. **Verify:** Ensure telemetry and log traces show consistent dual-write behavior.\n3. **Switch:** Deploy C# code that shifts reads to the new schema.\n4. **Contract:** Deploy database migrations that drop the obsolete database columns and tables once the old code is fully decommissioned."
+        },
+        {
+          "q": "What is the API Gateway pattern and when should you migrate to a service mesh (e.g. Linkerd, Istio)?",
+          "a": "* **API Gateway (YARP, Ocelot):** Manages north-south traffic (client-to-service). Handles public routing, rate-limiting, and authentication.\n* **Service Mesh (Istio, Linkerd):** Manages east-west traffic (service-to-service inside the cluster). It injects sidecar proxies to handle mutual TLS encryption, service discovery, retries, and distributed tracing automatically, removing network security boilerplate from individual .NET microservice codebases."
+        },
+        {
+          "q": "How do you design distributed tracing context propagation in .NET when messaging across heterogeneous brokers?",
+          "a": "Use the OpenTelemetry W3C Trace Context standard. When publishing a message (e.g. from service A to RabbitMQ), inject the `traceparent` and `tracestate` headers into the message metadata/headers. When service B consumes the message, extract these headers and initialize a new `Activity` using the extracted trace parent as the parent context: `ActivitySource.StartActivity(\"ConsumeEvent\", ..., parentContext)`."
+        },
+        {
+          "q": "What is CQRS Read Model projection rebuild and how do you execute it on production systems without downtime?",
+          "a": "If you update a read-model schema, you must rebuild the read database. Use the Blue-Green read model projection pattern:\n1. Deploy the new projection worker code mapping to a new target table (e.g. `ReadModel_V2`).\n2. Replay all past domain events from the event store to populate the new database table.\n3. Once caught up, update the API routing configs to query the `ReadModel_V2` database.\n4. Decommission and drop the obsolete `ReadModel_V1` database tables."
+        },
+        {
+          "q": "How do you design and implement a Modular Monolith with strict logical and database isolation in C#?",
+          "a": "1. **Logical Isolation:** Separate code into isolated C# projects (e.g., `MyProject.Billing`, `MyProject.Shipping`). Restrict project references so modules cannot reference each other's internals.\n2. **Communication:** Use an in-memory event bus (like MediatR or MassTransit mediator) for cross-module communication.\n3. **Database Isolation:** Map each module's entities to separate database schemas (e.g. `billing.Invoices`, `shipping.Shipments`) within the same DB, preventing cross-schema joins."
+        },
+        {
+          "q": "What are the core architectural differences between a stateless service and a stateful service?",
+          "a": "* **Stateless Service:** Stores no state in local memory between requests; all state is resolved from external databases/caches (e.g., Redis, SQL). Easy to scale horizontally behind a load balancer.\n* **Stateful Service:** Stores state (active sessions, game states) in local RAM. Requires session affinity (sticky sessions) or distributed consensus protocols (Raft/Paxos) to synchronize memory state across instances, making scaling complex."
+        },
+        {
+          "q": "What is Event-Driven Architecture (EDA) backpressure and how do you design systems to handle massive traffic bursts safely?",
+          "a": "Backpressure occurs when messages arrive faster than a service can process them, exhausting server memory. Design strategies: configure bounded channels (limit queue sizes), implement consumer concurrency limits (e.g. prefetch counts in MassTransit), throttle upstream publishers, and design consumer services to scale out dynamically based on queue depth metrics."
+        },
+        {
+          "q": "Explain the difference between Orchestration and Choreography Sagas from a maintainability and deployment cycle perspective.",
+          "a": "* **Orchestration:** High maintainability because the entire workflow is documented in a single state machine class. Easier to debug and adjust. Deployment is centralized.\n* **Choreography:** Harder to maintain because the saga logic is scattered across multiple services. Modifying the workflow requires coordinated changes and deployments across multiple service teams, raising deployment risk."
+        },
+        {
+          "q": "How do you design a disaster recovery plan (active-active multi-region) for a high-transaction .NET API and its database?",
+          "a": "1. Deploy the API containers across two cloud regions, routed via latency-based global load balancers (Azure Front Door, AWS Route 53).\n2. Use a globally distributed multi-write database (e.g. Cosmos DB with multi-region writes or SQL Server with active geo-replication).\n3. Implement conflict resolution rules (LWW, CRDTs) to reconcile split-brain writes.\n4. Use local Redis clusters in each region with asynchronous synchronization."
+        }
+      ]
+    },
+    {
+      "category": "High-Performance .NET",
+      "icon": "cpu",
+      "color": "var(--indigo)",
+      "questions": [
+        {
+          "q": "Explain the difference between Server GC and Workstation GC in .NET. How do you configure and debug them?",
+          "a": "**1. Workstation GC:** Designed for desktop applications. Prioritizes low latency and UI responsiveness. It runs on a single background thread to minimize CPU usage.\n**2. Server GC:** Designed for high-throughput server applications (like ASP.NET Core). It creates one GC heap and one dedicated GC thread *per logical CPU core*. It operates in parallel, maximizing throughput at the cost of high memory usage and context switching.\n**3. Configuration:** Set in `runtimeconfig.json` or `.csproj`:\n```xml\n<ServerGarbageCollection>true</ServerGarbageCollection>\n```\n**4. Debugging:** Monitor with `dotnet-counters` (check `% Time in GC`, `Gen 0/1/2 Size`). Use `dotnet-dump` to inspect heaps and find memory leaks."
+        },
+        {
+          "q": "What is the Large Object Heap (LOH)? How does it cause OutOfMemoryException (OOM) even with free memory, and how has .NET solved this?",
+          "a": "**1. Definition:** Any object allocation >= 85,000 bytes goes directly to the LOH.\n\n**2. The Problem:** Unlike Gen 0/1/2 heaps, the LOH is **not compacted** by default because moving large memory chunks is highly CPU-intensive. Over time, allocating and releasing large buffers (e.g., large arrays, strings) creates memory gaps (fragmentation). Eventually, a request for a large contiguous memory block fails, triggering an OOM exception, even if total free memory is high.\n\n**3. .NET Solutions:**\n* **LOH Compaction:** Configure LOH compaction dynamically using `GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;` at garbage collection time.\n* **Pinned Object Heap (POH):** In .NET 5+, pinned buffers are stored in the POH, preventing them from fragmenting the standard GC heaps.\n* **Buffer Pooling:** Use `ArrayPool<byte>.Shared` to rent and recycle large byte arrays, avoiding heap allocations entirely."
+        },
+        {
+          "q": "What is Span<T> and ReadOnlySpan<T>? How do they work under the hood and how do they prevent heap allocation?",
+          "a": "`Span<T>` and `ReadOnlySpan<T>` are stack-allocated `ref struct` representations of contiguous memory blocks.\n\n**1. Under the Hood:** A `Span<T>` contains a managed pointer (`ref T`) and a length. Because it is a `ref struct`, it can **only live on the stack** (cannot be boxed, stored in normal classes, used in async methods, or stored in fields of generic classes).\n\n**2. Zero-Allocation Slicing:** Slicing a array or string (e.g. `string.AsSpan().Slice(0, 5)`) does not allocate any memory on the heap; it simply creates a new Span pointing to a window of the existing memory, preventing garbage collection overhead in hot paths."
+        },
+        {
+          "q": "Explain Memory<T> and ReadOnlyMemory<T>. How do they differ from Span<T> and when should they be used?",
+          "a": "Because `Span<T>` is a stack-only `ref struct`, it cannot exist across async `await` boundaries or be stored as fields in regular classes.\n\n**1. Memory<T>:** A heap-compatible wrapper representing a contiguous region of memory. It can be stored on the heap and passed across async boundaries.\n**2. When to Use:** Use `Memory<T>` or `ReadOnlyMemory<T>` when writing asynchronous methods that manipulate buffers, or when storing buffer contexts inside class fields. Convert it back to a `Span<T>` dynamically calling `.Span` when performing synchronous parsing."
+        },
+        {
+          "q": "What is ArrayPool<T> and how does it reduce Garbage Collector pressure in high-throughput .NET applications?",
+          "a": "`ArrayPool<T>` (in `System.Buffers`) manages reusable array buffers.\n\n**1. Mechanism:** Instead of allocating a new array (e.g. `new byte[4096]`) which must be garbage collected, you rent a buffer using `ArrayPool<byte>.Shared.Rent(4096)`. Once finished, return it in a `finally` block: `ArrayPool<byte>.Shared.Return(buffer)`.\n**2. Performance:** Reusing buffers reduces Gen 0 allocations, preventing GC pauses (Stop-The-World) in critical I/O operations."
+        },
+        {
+          "q": "How does C# Struct Layout (Sequential vs. Explicit) affect memory footprint and performance?",
+          "a": "By default, the runtime decides the layout of fields in memory, often adding padding bytes to align fields with hardware boundaries.\n\n**1. LayoutKind.Sequential:** Forces the CLR to arrange fields in the order they are declared in the struct.\n**2. LayoutKind.Explicit:** Allows defining precise memory offsets for each field using `[FieldOffset(N)]` attributes. Useful for writing unions or mapping direct network/binary payloads.\n**3. Performance:** Aligning fields to CPU word boundaries (e.g., 64-bit bounds) avoids split-register memory reads, optimizing performance."
+        },
+        {
+          "q": "What is JIT (Just-In-Time) compilation in .NET? Explain RyuJIT and Tiered Compilation.",
+          "a": "The .NET compiler compiles C# into Intermediate Language (IL). At runtime, the JIT (Just-In-Time) compiler compiles IL into native machine code.\n\n**1. RyuJIT:** The modern 64-bit JIT compiler used by .NET. It performs optimizations like loop unrolling, inlining, and SIMD vectorization.\n**2. Tiered Compilation (Default):**\n* *Tier 0:* Compiles code quickly with minimal optimizations, speeding up application startup.\n* *Tier 1:* If a method is executed frequently (hot path), the runtime re-compiles it in Tier 1 with full optimizations, providing maximum steady-state execution speed."
+        },
+        {
+          "q": "Why is Reflection slow? What are the modern alternatives for high-performance .NET applications?",
+          "a": "Reflection dynamically inspects assemblies, types, and members at runtime, requiring metadata lookups, type checks, and boxing/unboxing overhead, making it highly CPU-intensive.\n\n**Modern Alternatives:**\n1. **Cached Delegates:** Create and cache delegates using `Delegate.CreateDelegate(...)` for dynamic method calls.\n2. **System.Reflection.Emit:** Generate IL bytecode dynamically at startup.\n3. **C# Source Generators (Recommended):** Code is generated at *compile-time* based on attributes, eliminating runtime reflection entirely (used in modern JSON serialization and dependency injection)."
+        },
+        {
+          "q": "How do you design a zero-allocation parsing pipeline in .NET?",
+          "a": "1. **Use Spans:** Represent input buffers as `ReadOnlySpan<byte>` or `ReadOnlySpan<char>`.\n2. **Avoid String Allocations:** Use `Utf8Parser` (in `System.Buffers.Text`) to parse numbers, dates, and bools directly from byte spans without converting them to strings.\n3. **Recycle Buffers:** Use `ArrayPool<T>` for any temporary buffers.\n4. **Avoid Boxing:** Use generic methods with struct constraints to avoid converting value types to objects."
+        },
+        {
+          "q": "What is the difference between ValueTask<T> and Task<T>? When should you use each?",
+          "a": "* **Task<T>:** A reference type class. Allocates memory on the heap every time it is created. Best for operations that always run asynchronously (I/O bound).\n* **ValueTask<T>:** A value type struct. If the operation completes synchronously (e.g., data is cached), it allocations **zero memory**. If the operation runs asynchronously, it wraps a standard `Task<T>` allocation.\n* **Rule of Thumb:** Use `ValueTask<T>` for high-frequency, hot-path methods that complete synchronously in a high percentage of cases (>90%). Never await a `ValueTask` twice or block on it using `.Result`."
+        },
+        {
+          "q": "What is the difference between Concurrent GC and Non-Concurrent (Background) GC? How does it affect p99 latency?",
+          "a": "* **Concurrent/Background GC:** Runs Gen 0 and Gen 1 collections while application threads continue to execute. Gen 2 collections run on a separate thread, pausing application threads only briefly. Prioritizes low response time (low p99 latency).\n* **Non-Concurrent GC:** Suspends all application threads (Stop-The-World) for the entire duration of the collection. Best for batch processing where throughput is the only metric."
+        },
+        {
+          "q": "How do you configure and optimize the Garbage Collector for high-core container environments (e.g., CPU limits vs GC heaps)?",
+          "a": "By default, Server GC allocates one heap and one thread per logical core. In containerized environments (Kubernetes), if CPU limits are set lower than the node's logical cores, Server GC will spawn excessive threads, causing CPU throttling due to context switching. Optimize by setting `GCHeapCount` in `runtimeconfig.json` to match the container's CPU limit: `\"System.GC.HeapCount\": 2`."
+        },
+        {
+          "q": "Explain the difference between managed memory, unmanaged memory, and stack allocation in C#.",
+          "a": "* **Managed Memory:** Allocated on the GC heap. Managed automatically by the Garbage Collector.\n* **Unmanaged Memory:** Allocated outside the GC heap using `Marshal.AllocHGlobal` or native C APIs. Must be freed manually to prevent memory leaks.\n* **Stack Allocation:** Allocated in the method call frame using `stackalloc`. Automatically reclaimed when the method returns, having zero GC overhead."
+        },
+        {
+          "q": "What is GC.KeepAlive and why is it needed when working with unmanaged code interop?",
+          "a": "If an object is only referenced in unmanaged code via an IntPtr, the .NET JIT compiler may aggressively determine the managed object is no longer referenced in C# and garbage collect it while the native code is still running. Calling `GC.KeepAlive(obj)` at the end of the method forces the GC to keep the object alive until that point."
+        },
+        {
+          "q": "Explain how the .NET runtime optimizes string pooling and literal storage.",
+          "a": "The .NET runtime maintains an internal pool of unique string literals called the 'Intern Pool'. At compile time, duplicate string literals are folded into a single reference in the assembly metadata. At runtime, the CLR ensures only one instance of each literal exists in the heap. You can programmatically query or add to this pool using `string.Intern(str)`."
+        },
+        {
+          "q": "What is Pinning in .NET? How does it affect GC compaction and how do you avoid pinned object heap (POH) fragmentation?",
+          "a": "Pinning locks a heap object's memory address (using `fixed` block or `GCHandle`) so it cannot be moved by the GC during compaction (usually for interop buffers). Pinning creates 'islands' in the heap, causing fragmentation. To avoid this, .NET 5+ introduced the Pinned Object Heap (POH) where pinned objects are allocated, leaving the main heaps free to compact cleanly."
+        },
+        {
+          "q": "What is the Unsafe class and how does it bypass safety checks for high-performance memory manipulation?",
+          "a": "`System.Runtime.CompilerServices.Unsafe` bypasses C# type safety and null checks. It performs direct pointer casting, offset calculations, and memory copies (e.g. `Unsafe.As<T1, T2>(ref value)`). It runs as fast as raw C++ pointers, but mistakes cause memory corruption, segmentation faults, and security vulnerabilities."
+        },
+        {
+          "q": "How does RyuJIT perform Devirtualization and what are the performance impacts of interfaces vs. concrete types in C# loops?",
+          "a": "Calling an interface method normally requires a virtual table lookup (vtable call), which blocks compiler optimizations like inlining. If RyuJIT can prove the concrete type at compile/runtime (Devirtualization), it bypasses the vtable and emits a direct call. This enables inlining, optimizing loop executions up to 5x."
+        },
+        {
+          "q": "What is SIMD (Single Instruction, Multiple Data) in C# and how do you write vectorized math code?",
+          "a": "SIMD executes a single CPU instruction across multiple data channels in parallel. In C#, use `Vector<T>`, `Vector128<T>`, or `Vector256<T>`. When performing math operations on large arrays, load them into vectors and process them. RyuJIT translates these to native SIMD instructions (AVX2, SSE), speeding up math loops by 4x-8x."
+        },
+        {
+          "q": "What is assembly loading context (AssemblyLoadContext) and how does it support hot-swapping plugins?",
+          "a": "`AssemblyLoadContext` handles assembly resolution and loading. You can create a custom collectible context: `var alc = new AssemblyLoadContext(\"PluginContext\", isCollectible: true)`. When the context is unloaded (`alc.Unload()`), the CLR unloads all assemblies loaded within it, freeing metadata memory, enabling zero-downtime plugin updates."
+        },
+        {
+          "q": "Explain RyuJIT's Loop Unrolling and Inlining optimizations, and how to control them with MethodImplOptions.",
+          "a": "* **Inlining:** Replaces a method call with the method body. Control with `[MethodImpl(MethodImplOptions.AggressiveInlining)]`.\n* **Loop Unrolling:** Duplicates the loop body to reduce loop branch evaluation overhead. RyuJIT decides this based on loop metrics. Prevent inlining using `MethodImplOptions.NoInlining` to assist stack trace debugging."
+        },
+        {
+          "q": "What is the difference between System.Text.Json source generator and runtime reflection serializer?",
+          "a": "* **Reflection Serializer:** Inspects properties at runtime, generating IL code dynamically. Slow startup, high memory allocations, trim-incompatible.\n* **Source Generator:** Analyzes models at compile time, generating C# serialization code. Zero reflection, instant startup, Native AOT compatible, and runs up to 30% faster."
+        },
+        {
+          "q": "How do you profile and eliminate locks or contention using ETW (Event Tracing for Windows) or LTTng on Linux?",
+          "a": "Record traces using `dotnet-trace collect --providers Microsoft-Windows-DotNETRuntime:0x10000:5`. Open the trace in PerfView or Visual Studio Profiler. Look at the 'Contention' events and stack traces to identify which locks are blocking thread execution (thread context switching), and replace them with `ReaderWriterLockSlim` or lock-free concurrent structures."
+        },
+        {
+          "q": "Explain Native AOT (Ahead-of-Time) compilation and how to resolve trimming compatibility warnings in .NET.",
+          "a": "Native AOT compiles IL straight to native binaries, omitting the JIT and IL files. Dynamic reflection, runtime serialization, and open generics trigger trimming warnings. Resolve warnings by replacing reflection code with Source Generators, or using attributes like `[RequiresUnreferencedCode]` and `[DynamicallyAccessedMembers]` to instruct the compiler to preserve metadata."
+        },
+        {
+          "q": "What is the difference between Thread pool starvation and JIT compilation overhead during warm-up, and how do you mitigate warm-up latency?",
+          "a": "* **JIT Warm-up:** The delay when an endpoint is hit the first time because RyuJIT is compiling IL to machine code. Mitigate using ReadyToRun (R2R) pre-compilation.\n* **ThreadPool Starvation:** A runtime bottleneck where threads are blocked waiting for async completions. Mitigate by keeping the pipeline fully async and increasing the minimum thread count: `ThreadPool.SetMinThreads(...)`."
+        }
+      ]
+    },
+    {
+      "category": "Async & Concurrency",
+      "icon": "shuffle",
+      "color": "var(--teal)",
+      "questions": [
+        {
+          "q": "What is the difference between Asynchronous and Parallel programming?",
+          "a": "* **Asynchronous (I/O Bound):** Releasing the calling thread while waiting for an external operation (network call, DB query) to complete. Improves application scalability.\n* **Parallel (CPU Bound):** Splitting a heavy task across multiple CPU cores (using `Parallel.For` or Task Parallel Library) to process data faster. Improves calculation throughput."
+        },
+        {
+          "q": "What is the role of the SynchronizationContext in async/await?",
+          "a": "The `SynchronizationContext` schedules async continuations back to the original execution context.\n\nFor example, in UI apps (WPF, WinForms), only the UI thread can update controls. The context ensures the code after `await` runs on the UI thread. In ASP.NET Core, there is no `SynchronizationContext`, meaning continuations run on any available ThreadPool thread."
+        },
+        {
+          "q": "Why and when should you use ConfigureAwait(false) in C#?",
+          "a": "`ConfigureAwait(false)` tells the awaiter that the async continuation does not need to run on the captured `SynchronizationContext`.\n\n**Why use it:**\n1. **Performance:** Bypasses context scheduling overhead.\n2. **Deadlock Prevention:** Essential in library code (NuGet packages) where blocking on a Task could cause a deadlock if the UI thread is waiting for the same task."
+        },
+        {
+          "q": "What is ThreadPool Starvation and how can you prevent it?",
+          "a": "ThreadPool Starvation occurs when all ThreadPool threads are blocked, preventing the application from handling new requests.\n\n**Common Cause:** \"Sync-over-Async\" blocking calls (e.g. `FetchDataAsync().Result` or `.Wait()`).\n**Prevention:** Go async all the way up. Do not block on Tasks synchronously."
+        },
+        {
+          "q": "How do you handle exceptions in Task.WhenAll vs. Task.WhenAny?",
+          "a": "* **Task.WhenAll:** Awaits all tasks. If multiple tasks fail, the exception thrown represents the first failure. The other exceptions are captured inside the returned Task's `Exception.InnerExceptions` collection.\n* **Task.WhenAny:** Returns when the first task completes (success or failure). To check for exceptions, you must check the returned task's status or await it directly."
+        },
+        {
+          "q": "What is the purpose of CancellationToken and how do you use it in Web APIs?",
+          "a": "A `CancellationToken` allows cooperative cancellation of long-running operations.\n\nIn ASP.NET Core controllers, you can inject a `CancellationToken` as a parameter. If a user cancels the HTTP request (e.g., by closing the browser tab), the token triggers, allowing you to abort database queries and HTTP requests, saving server resources."
+        },
+        {
+          "q": "Compare Task.Run vs. Task.Factory.StartNew. Which is preferred?",
+          "a": "* **Task.Run:** A wrapper around `Task.Factory.StartNew` configured with safe default parameters. It is the preferred way to queue CPU-bound tasks to the ThreadPool.\n* **Task.Factory.StartNew:** Offers advanced options (e.g., custom task schedulers, long-running threads). Avoid unless you specifically need these advanced features, as it can cause thread leaks if used incorrectly."
+        },
+        {
+          "q": "What is a Race Condition? How do you prevent it using 'lock' in C#?",
+          "a": "A Race Condition occurs when multiple threads read and write a shared memory location concurrently, leading to corrupted data.\n\nThe **`lock` statement** ensures that only one thread can enter a critical section of code at a time. It uses an internal monitor to block other threads until the lock is released."
+        },
+        {
+          "q": "What is Thread-Safe Code? Name three thread-safe collections in .NET.",
+          "a": "Thread-safe code guarantees correct execution when accessed by multiple threads concurrently without data corruption.\n\n**Thread-Safe Collections:**\n* `ConcurrentDictionary<TKey, TValue>`\n* `ConcurrentQueue<T>`\n* `ConcurrentBag<T>`"
+        },
+        {
+          "q": "What is the difference between Thread, Task, and Process?",
+          "a": "* **Process:** An isolated execution program with its own memory space (e.g. your running API container).\n* **Thread:** A basic path of execution within a process. Multiple threads share the process's memory.\n* **Task:** An abstraction representing an asynchronous operation, managed by the .NET Task Scheduler and executed on ThreadPool threads."
+        },
+        {
+          "q": "What is the difference between SemaphoreSlim and Semaphore? How does SemaphoreSlim optimize for CPU time?",
+          "a": "`Semaphore` is a wrapper around operating system kernel synchronization objects, which require costly kernel transitions. `SemaphoreSlim` is a lightweight alternative that first spins in user mode (using lightweight CPU loops) before falling back to kernel-based waits, drastically improving performance for short wait durations."
+        },
+        {
+          "q": "Explain the design of IAsyncEnumerable<T> and how it handles backpressure during streaming.",
+          "a": "`IAsyncEnumerable<T>` generates an asynchronous state machine. When calling `await foreach`, each item is requested asynchronously using `MoveNextAsync()`. Backpressure is handled naturally because the consumer controls when to ask for the next item; the publisher only executes database/API queries when the consumer awaits the next iteration."
+        },
+        {
+          "q": "What is TaskCompletionSource<T> and how do you use it to write custom async synchronization primitives?",
+          "a": "`TaskCompletionSource<T>` manages a manual `Task<T>`. You use it to build custom async structures (like a rate-limiter or custom queue). You instantiate it, distribute its `.Task` property to awaiting threads, and complete it with `.SetResult()` once the execution condition is met, waking up all awaited tasks without blocking OS threads."
+        },
+        {
+          "q": "Explain AsyncLocal<T> and how it propagates values through the async call graph.",
+          "a": "`AsyncLocal<T>` stores data unique to the current asynchronous control flow. When a task is created or awaited, the runtime copies the execution context (including `AsyncLocal` values) down the stack. Modifying the value in a child task does not affect the parent context, making it ideal for tracking correlation IDs and tenant IDs in web requests."
+        },
+        {
+          "q": "What is the difference between Parallel.ForEachAsync and Task.WhenAll when processing millions of I/O operations?",
+          "a": "* **Task.WhenAll:** Fires all tasks concurrently without limits. Under high load, this exhausts sockets, triggers rate-limits, and exhausts server memory.\n* **Parallel.ForEachAsync (introduced in .NET 6):** Accepts a `MaxDegreeOfParallelism` parameter, throttling active executions. It processes tasks in batches, preventing socket exhaustion and rate-limiting blocks."
+        },
+        {
+          "q": "Explain the hill-climbing algorithm used by the .NET ThreadPool to adjust thread count under load.",
+          "a": " Hill-climbing is a heuristic algorithm that monitors ThreadPool completion rates. When a queue builds up, it increments thread counts. It then measures if throughput (completions per millisecond) increased. If yes, it spawns more threads; if no, it stops or drops the count. This prevents spawning too many threads, which degrades CPU performance due to context-switching."
+        },
+        {
+          "q": "What is the Interlocked class and how do you implement lock-free data structures using compare-and-swap (CAS)?",
+          "a": "`Interlocked` provides atomic CPU-level operations. CAS is implemented using `Interlocked.CompareExchange(ref location, newValue, expectedValue)`. To update a lock-free structure (e.g. stack top), you read the current state in a loop, compute the new state, and run CAS: if the state hasn't changed, the update succeeds; if it changed, the loop retries."
+        },
+        {
+          "q": "Explain how the compiler implements async/await using a state machine struct.",
+          "a": "The compiler compiles `async` methods into a private `struct` implementing `IAsyncStateMachine`. The method body is transformed into a `MoveNext()` method containing a switch statement mapped to state integers. Awaiting a task saves local variables as fields in the struct, hooks the continuation, and returns, avoiding stack preservation allocations."
+        },
+        {
+          "q": "What is System.Threading.Channels and how does it compare to BlockingCollection<T> for high-throughput messaging?",
+          "a": "* **BlockingCollection<T>:** Built on concurrent queue structures, but blocks OS threads synchronously when reading from an empty collection.\n* **System.Threading.Channels:** Async-first, high-performance messaging pipeline. Writing/reading is completely asynchronous (`ValueTask`), minimizing allocations, supporting backpressure, and executing up to 10x faster."
+        },
+        {
+          "q": "Explain the difference between volatile reads/writes and explicit memory barriers.",
+          "a": "* **volatile:** Compiler decoration that prevents instruction reordering and caching of a field in CPU registers. Applies to all reads/writes of that field.\n* **Memory Barrier (Thread.MemoryBarrier):** A hardware fence forcing the CPU to complete all pending memory operations before executing subsequent instructions, providing finer control over critical lock-free scopes."
+        },
+        {
+          "q": "What is ReaderWriterLockSlim and what are the concurrency trade-offs of lock upgrading?",
+          "a": "`ReaderWriterLockSlim` supports concurrent readers and exclusive writers. Upgrading a lock happens when a reader thread attempts to acquire a writer lock. This is highly prone to deadlocks if two reader threads attempt to upgrade at the same time. To avoid this, utilize `EnterUpgradeableReadLock` which blocks other writers up front."
+        },
+        {
+          "q": "How do you detect and resolve thread pool starvation in a production Linux microservice?",
+          "a": "1. Monitor `dotnet-counters` for thread pool queue size and thread counts.\n2. If thread count rises continuously while throughput drops, starvation is occurring.\n3. Capture stack traces using `dotnet-stack` to locate blocked threads (waiting on `.Result` or synchronous lock waits).\n4. Replace all blocking calls with `await`, and configure `SetMinThreads` to match expected initial load."
+        },
+        {
+          "q": "What is a custom SynchronizationContext and when would you need to implement one?",
+          "a": "A custom `SynchronizationContext` overrides `Post` and `Send` methods to control how tasks are scheduled on threads. You implement one when building custom thread execution boundaries (like a single-threaded message loop for game engines or a custom actor model) to marshal continuations back to a specific worker thread."
+        },
+        {
+          "q": "Explain the difference between a Task Scheduler and a Synchronization Context.",
+          "a": "* **TaskScheduler:** Coordinates the execution of `Task` objects on threads. Handles queueing and work-stealing across the ThreadPool.\n* **SynchronizationContext:** An abstraction representing the thread execution context where code runs. It is used to marshal task continuations back to specific threads (like the UI thread) regardless of the scheduler."
+        },
+        {
+          "q": "How do you design a high-performance concurrent cache using ConcurrentDictionary and Lazy<T> to avoid duplicate database calls?",
+          "a": "To prevent multiple threads from querying the database for the same key simultaneously (cache stampede), wrap values in `Lazy<T>`:\n```csharp\nvar cache = new ConcurrentDictionary<string, Lazy<Task<Data>>>();\nvar value = cache.GetOrAdd(key, k => new Lazy<Task<Data>>(() => FetchFromDbAsync(k))).Value;\nawait value;\n```\nThis guarantees `FetchFromDbAsync` runs only once per key, even under extreme concurrency."
+        }
+      ]
+    },
+    {
+      "category": "Data Access",
+      "icon": "database",
+      "color": "var(--cyan)",
+      "questions": [
+        {
+          "q": "Compare Lazy Loading vs. Eager Loading in Entity Framework Core.",
+          "a": "Both load related entities, but have different loading behaviors:\n\n* **Eager Loading:** Loads related data in the initial SQL query using `Include(x => x.Relation)`. Fast and predictable.\n* **Lazy Loading:** Loads related data only when the navigation property is accessed. Cons: Triggers multiple database roundtrips and can lead to performance problems if not managed carefully."
+        },
+        {
+          "q": "What is the N+1 Query Problem in Entity Framework and how do you resolve it?",
+          "a": "The N+1 Query Problem occurs when the application executes one query to fetch parent records, and then executes an additional query *for each parent record* to fetch child records.\n\n**Example:** Fetching 100 Orders, then looping through each Order to load its Customer. This runs 101 database calls.\n**Resolution:** Use Eager Loading (`Include(o => o.Customer)`) to fetch all orders and customers in a single database roundtrip."
+        },
+        {
+          "q": "Why and when should you use AsNoTracking() in EF Core?",
+          "a": "By default, EF Core tracks all entities loaded from the database, storing their original state to detect changes when you call `SaveChanges()`.\n\nUse **`.AsNoTracking()`** for read-only queries. It disables tracking, saving memory and processing power, making the query execute faster."
+        },
+        {
+          "q": "Compare EF Core vs. Dapper. When should you choose each?",
+          "a": "* **EF Core (ORM):** High-level mapping, auto-generates SQL, handles migrations. Best for transactional CRUD operations and complex domain modeling.\n* **Dapper (Micro-ORM):** Raw SQL queries mapped to C# objects. Extremely fast, lightweight. Best for read-heavy performance-critical endpoints, complex reports, and bulk insert operations."
+        },
+        {
+          "q": "What are EF Core Migrations and how do you use them safely in production?",
+          "a": "Migrations are C# files generated from your model updates to apply schema changes to the database.\n\n**Production Safety:**\n1. **Do not run `db.Database.Migrate()` on startup** under high load or in multi-instance containers, as concurrent runs can cause schema lock deadlocks.\n2. **Generate SQL Scripts:** Run `dotnet ef migrations script` in your CI/CD pipeline, and execute the generated SQL script during deployment."
+        },
+        {
+          "q": "How does EF Core's Connection Pooling work?",
+          "a": "Opening a database connection is expensive. Connection Pooling keeps a pool of open database connections active.\n\nWhen a `DbContext` is created, it rents an existing open connection from the pool and returns it when disposed. Register pooling in DI using `AddDbContextPool<MyDbContext>(...)` to maximize throughput under heavy load."
+        },
+        {
+          "q": "What is an index in SQL Server? How do you configure one in EF Core?",
+          "a": "An index is a database structure that speeds up retrieval operations on a table.\n\n**Configuration in EF Core Fluent API:**\n```csharp\nprotected override void OnModelCreating(ModelBuilder modelBuilder) {\n    modelBuilder.Entity<User>()\n        .HasIndex(u => u.Email)\n        .IsUnique();\n}\n```"
+        },
+        {
+          "q": "How do you handle Database Transactions in EF Core?",
+          "a": "EF Core implicitly wraps `SaveChanges()` in a transaction. If multiple updates fail, they roll back.\n\nFor multi-step updates across different repositories or DbContext instances, create an explicit transaction:\n```csharp\nusing var transaction = await context.Database.BeginTransactionAsync();\ntry {\n    await context.SaveChangesAsync();\n    await transaction.CommitAsync();\n} catch {\n    await transaction.RollbackAsync();\n}\n```"
+        },
+        {
+          "q": "What is Shadow Property in EF Core?",
+          "a": "A Shadow Property is a property that exists in the database schema but is not defined in the C# entity class.\n\nCommonly used for audit columns (e.g. `LastUpdated`, `CreatedBy`). You configure them in `OnModelCreating` and write values using `context.Entry(entity).Property(\"LastUpdated\").CurrentValue = DateTime.UtcNow;`."
+        },
+        {
+          "q": "What is DbContext concurrency conflict and how do you resolve it?",
+          "a": "A conflict occurs when two users update the same record concurrently (Last-Write-Wins).\n\n**Resolution (Optimistic Concurrency):** Add a `[ConcurrencyCheck]` attribute or a `[Timestamp]` rowversion property to the entity. If the row version changed since it was loaded, EF Core throws a `DbUpdateConcurrencyException`, allowing you to reload the data and merge changes."
+        },
+        {
+          "q": "What is Explicit Loading in EF Core and how does it compare to Eager/Lazy loading?",
+          "a": "Explicit loading fetches related entities for an already loaded parent entity on demand. It uses `context.Entry(parent).Collection(p => p.Children).Load()` or `Reference(p => p.Child).Load()`. It is faster than Lazy Loading because it is explicit and doesn't require proxy objects, and it prevents loading unnecessary data up front compared to Eager Loading."
+        },
+        {
+          "q": "Explain the difference between Compiled Queries and standard LINQ queries in EF Core.",
+          "a": "* **Standard LINQ:** EF Core must compile the LINQ expression tree into SQL every time the query is called, causing minor CPU overhead.\n* **Compiled Queries:** Compiled once and stored in a delegate: `EF.CompileAsyncQuery(...)`. Bypasses JIT compile overhead, executing significantly faster in high-throughput endpoints."
+        },
+        {
+          "q": "What are Global Query Filters in EF Core and how do you temporarily disable them?",
+          "a": "Global Query Filters apply a WHERE filter automatically to all queries on an entity type (commonly used for soft-deletes: `p => !p.IsDeleted` or multi-tenancy). To query the full table including filtered records (like fetching deleted items for admin screens), append `.IgnoreQueryFilters()` to the LINQ query."
+        },
+        {
+          "q": "Explain how EF Core change tracker works (Snapshot vs Proxy tracking).",
+          "a": "* **Snapshot (Default):** EF Core takes a snapshot of entity values when loaded. When you call `SaveChanges()`, EF Core scans all tracked entities and compares them to the snapshots to detect changes.\n* **Proxy Tracking:** EF Core generates proxy classes (requires virtual properties) that intercept setter calls to record changes instantly, eliminating the comparison scan."
+        },
+        {
+          "q": "What is Table-per-Hierarchy (TPH) vs Table-per-Type (TPT) inheritance mapping in EF Core?",
+          "a": "* **TPH (Default):** Entire class hierarchy is mapped to a single database table. A discriminator column identifies the type. Faster read queries since no joins are needed.\n* **TPT:** Each class in the hierarchy is mapped to a separate table containing its unique columns. Requires SQL JOINs to read inherited types, causing slower query performance."
+        },
+        {
+          "q": "How do you write high-performance bulk inserts and updates in EF Core?",
+          "a": "In EF Core 7+, use bulk update APIs: `context.Products.Where(p => p.Price > 100).ExecuteUpdate(s => s.SetProperty(p => p.Discount, 10))` and `ExecuteDelete()`. They execute single SQL UPDATE/DELETE commands directly in the database without loading entities into memory, skipping change tracking entirely."
+        },
+        {
+          "q": "What is SQL isolation levels (Read Committed, Snapshot, Serializable) and how do they affect .NET transactions?",
+          "a": "Isolation levels define how transactions are protected from concurrent changes:\n* **Read Committed (Default):** Prevents dirty reads. Holds read locks during the select.\n* **Snapshot:** Uses row versioning. Reads don't block writes; transactions read from a snapshot.\n* **Serializable:** Safest, blocks concurrent inserts on ranges (phantom reads). Causes lock timeouts under load."
+        },
+        {
+          "q": "How do you optimize LINQ queries to avoid client-side evaluation?",
+          "a": "Client-side evaluation happens when EF Core cannot translate a LINQ method (like custom C# string manipulation) to SQL, executing it in memory instead. Prevent this by rewriting queries using supported SQL translation methods, or by filtering with `.Where()` before selecting the custom C# execution blocks."
+        },
+        {
+          "q": "What is Dapper's multi-mapping and how do you map one-to-many relationships in a single query?",
+          "a": "Dapper's multi-mapping maps columns from a single SQL join query into multiple C# classes. You pass a mapping delegate to `conn.QueryAsync<Parent, Child, Parent>(sql, (parent, child) => { ... })` and split columns using the `splitOn` parameter, populating the parent's child collection manually."
+        },
+        {
+          "q": "What are interceptors in EF Core and how can you use them for auditing?",
+          "a": "Interceptors are classes inheriting from `SaveChangesInterceptor` or `DbCommandInterceptor`. They allow injecting custom behavior before/after database operations. For auditing, you intercept `SavingChanges` to inspect the DbContext Change Tracker, automatically populating columns like `CreatedBy` or `LastUpdated`."
+        },
+        {
+          "q": "Explain the difference between database-generated keys and client-side GUID keys (like sequential GUIDs).",
+          "a": "* **DB-Generated (Identity):** Requires a roundtrip (SELECT @@IDENTITY) during inserts, blocking inserts during batch imports.\n* **Client GUID:** Can be generated offline. Cons: causes index fragmentation in SQL Server due to random inserts. Use sequential GUIDs (`RT.Comb`) to maintain clustered index insertion order."
+        },
+        {
+          "q": "How do you monitor SQL queries generated by EF Core in development and production?",
+          "a": "In development, configure logging: `options.LogTo(Console.WriteLine, LogLevel.Information)`. In production, use database profiling tools, EF Core Interceptors, APM integrations (Application Insights / Datadog), or track `DiagnosticSource` events emitted by EF Core dynamically."
+        },
+        {
+          "q": "What is the difference between SQL Server's Clustered Index and Non-Clustered Index?",
+          "a": "* **Clustered Index:** Physically reorders rows in the table to match the index key. Only one per table (typically the Primary Key). Queries reading ranges are extremely fast.\n* **Non-Clustered Index:** Stores a separate index tree containing key columns and pointers to actual row locations (clustered key). Can have multiple per table."
+        },
+        {
+          "q": "How do you handle schema changes in a high-traffic production database without downtime?",
+          "a": "Use a non-breaking, multi-phase migration (Expand and Contract):\n1. Add the new database column as nullable, and modify code to write to both old and new fields.\n2. Run a background script to backfill data into the new column.\n3. Deploy code that reads from the new column.\n4. Drop the old column in a later release."
+        },
+        {
+          "q": "What is the CQRS read-model update pattern (e.g., using SQL views or materialization)?",
+          "a": "When writing data, you publish an integration event. A background subscriber (running MassTransit or Hangfire) consumes the event and executes SQL commands to update read-optimized tables or materialized views. Reads query these tables directly, bypassing complex joins and calculations."
+        }
+      ]
+    },
+    {
+      "category": "Cloud & Distributed",
+      "icon": "cloud",
+      "color": "var(--blue)",
+      "questions": [
+        {
+          "q": "Compare gRPC and REST APIs for microservices. When should you use each?",
+          "a": "* **REST (HTTP/JSON):** Human-readable, widely compatible, simple to test. Best for external APIs and public web integrations.\n* **gRPC (HTTP/2 / Protobuf):** Binary serialization, streaming support, contract-first development. Best for internal microservice-to-microservice communication where low latency is critical."
+        },
+        {
+          "q": "What is Docker? Write a basic Dockerfile for an ASP.NET Core 9 Web API.",
+          "a": "Docker packages applications into isolated containers with all dependencies.\n\n**Dockerfile Example:**\n```dockerfile\nFROM mcr.microsoft.com/dotnet/sdk:9.0 AS build\nWORKDIR /src\nCOPY . .\nRUN dotnet publish -c Release -o /app\n\nFROM mcr.microsoft.com/dotnet/aspnet:9.0\nWORKDIR /app\nCOPY --from=build /app .\nENTRYPOINT [\"dotnet\", \"MyApi.dll\"]\n```"
+        },
+        {
+          "q": "Compare In-Memory Cache vs. Distributed Cache (Redis) in .NET.",
+          "a": "* **In-Memory Cache (`IMemoryCache`):** Stored inside the local application process memory. Fast, but resets on restart and is not shared across scaled container instances.\n* **Distributed Cache (`IDistributedCache` / Redis):** Stored in a separate caching server. Shared by all instances, persistent across restarts, but requires network calls."
+        },
+        {
+          "q": "How does ASP.NET Core read Configuration from multiple sources?",
+          "a": "ASP.NET Core loads configurations in a specific priority order (later overrides earlier):\n\n1. `appsettings.json`\n2. `appsettings.{Environment}.json`\n3. User Secrets (development only)\n4. Environment Variables (production container configuration)\n5. Command-line arguments"
+        },
+        {
+          "q": "What is an API Gateway? Name a popular open-source .NET API Gateway.",
+          "a": "An API Gateway is a reverse proxy that sits in front of backend APIs to handle routing, authentication, SSL termination, and rate limiting.\n\n**Popular .NET tool:** **YARP (Yet Another Reverse Proxy)** by Microsoft. It is configured in C# and integrates with ASP.NET Core middleware."
+        },
+        {
+          "q": "How do you run Background Tasks in ASP.NET Core?",
+          "a": "Implement the `IHostedService` interface or inherit from the **`BackgroundService`** helper class:\n\n```csharp\npublic class QueueWorker : BackgroundService {\n    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {\n        while (!stoppingToken.IsCancellationRequested) {\n            // Perform background task (e.g. process queue)\n            await Task.Delay(5000, stoppingToken);\n        }\n    }\n}\n```"
+        },
+        {
+          "q": "What is the Circuit Breaker Pattern and how do you implement it in .NET?",
+          "a": "A Circuit Breaker prevents an application from repeatedly calling a failing downstream microservice, protecting resources.\n\n**Implementation:** Use **Polly** with `HttpClient`. If the error rate exceeds 50% in 10s, the circuit opens, failing requests instantly without calling the downstream service, giving it time to recover."
+        },
+        {
+          "q": "What is the role of RabbitMQ or Azure Service Bus in distributed systems?",
+          "a": "They act as message brokers to enable asynchronous decoupling between microservices.\n\nInstead of calling Service B synchronously via HTTP, Service A publishes an event (e.g. `OrderPlaced`). Service B consumes the event at its own pace, ensuring system availability even if Service B is temporarily down."
+        },
+        {
+          "q": "What is Service Discovery and why is it needed in microservices?",
+          "a": "In containerized environments (Kubernetes), container IP addresses change constantly.\n\nService Discovery (Consul, Kubernetes DNS) acts as a registry. Microservices query the discovery service by name (e.g., `http://payment-service`) to resolve the active container IP dynamically."
+        },
+        {
+          "q": "What is Distributed Tracing and how does OpenTelemetry help in .NET?",
+          "a": "Distributed Tracing tracks requests as they flow across multiple microservices. OpenTelemetry provides a standard API to collect trace data.\n\nIt generates a `TraceId` at the gateway and injects it into HTTP/gRPC headers. Backend services log using this ID, allowing APM tools (Jaeger, Zipkin) to visualize the entire transaction graph."
+        },
+        {
+          "q": "Explain the Outbox Pattern in microservices and how it guarantees message delivery.",
+          "a": "The Outbox pattern prevents database updates and message publishing from getting out of sync. Rather than publishing directly to RabbitMQ, the service inserts the event payload into an `Outbox` database table within the same transaction. An asynchronous background process polls the table, publishes events, and marks them as completed, ensuring at-least-once delivery."
+        },
+        {
+          "q": "What is Idempotency in API design and how do you implement it in ASP.NET Core endpoints?",
+          "a": "An endpoint is idempotent if calling it multiple times has the same effect. Implement it in POST APIs (like payments) by requiring an idempotency key header. Before processing, search the database/cache for the key. If found, return the cached response immediately; otherwise, process and cache the result."
+        },
+        {
+          "q": "What is the CAP Theorem and how does it influence your choice of database in the cloud?",
+          "a": "CAP states that in a network partition (P), a system must choose between Consistency (C) and Availability (A). If you choose Consistency (CP), writes block until all nodes agree (SQL databases, MongoDB). If you choose Availability (AP), nodes accept writes and reconcile later (Cassandra, DynamoDB, Cosmos DB with eventual consistency)."
+        },
+        {
+          "q": "Explain the difference between horizontal and vertical scaling in Azure/AWS.",
+          "a": "* **Vertical Scaling (Scale Up):** Upgrading a single instance to a higher tier (more CPU, RAM, faster disk). Limited by hardware caps and causes downtime.\n* **Horizontal Scaling (Scale Out):** Spawning duplicate application instances behind a load balancer. Unlimited scale capacity and supports high availability."
+        },
+        {
+          "q": "How do you secure service-to-service communication in a Kubernetes cluster using .NET?",
+          "a": "1. Configure Mutual TLS (mTLS) using a service mesh (Istio, Linkerd) to encrypt cluster traffic.\n2. Implement OAuth2 Client Credentials grant flow between services using identity tokens.\n3. Configure NetworkPolicies to restrict container network access to specific pods."
+        },
+        {
+          "q": "What is a CDN (Content Delivery Network) and how does it optimize web application performance?",
+          "a": "A CDN is a distributed network of proxy servers that cache static assets (HTML, CSS, JS, images) close to users' physical locations. When a user requests a file, it is served from the nearest edge node, minimizing latency, reducing server load, and resolving traffic spikes."
+        },
+        {
+          "q": "Explain the difference between Active-Active and Active-Passive multi-region deployment.",
+          "a": "* **Active-Active:** Traffic is routed dynamically to all deployed regions concurrently. Requires complex distributed database replication (e.g. Cosmos DB multi-write).\n* **Active-Passive:** One region handles all traffic; the other acts as a cold/warm standby. Databases replicate unidirectionally. Safe and simple, but has recovery delay."
+        },
+        {
+          "q": "What is Rate Limiting and how is it implemented in ASP.NET Core 8+?",
+          "a": "Rate Limiting restricts the number of API requests from a client in a time window. ASP.NET Core 8+ includes built-in rate-limiting middleware supporting algorithms: Fixed Window, Sliding Window, Token Bucket, and Concurrency. You configure policies in `Program.cs` and apply them using `[EnableRateLimiting(\"PolicyName\")]`."
+        },
+        {
+          "q": "Explain the Eventual Consistency model and how to resolve conflicting updates.",
+          "a": "In eventual consistency, replica data updates are propagated asynchronously, meaning reads might return stale data temporarily. Resolve conflicts using: Last-Write-Wins (LWW) timestamp matching, Conflict-Free Replicated Data Types (CRDTs), or manual/business logic reconciliation (such as merging shopping carts)."
+        },
+        {
+          "q": "What is a Distributed Lock and how do you implement it using Redis (Redlock)?",
+          "a": "A distributed lock prevents race conditions when multiple app instances access a shared resource. Redlock uses Redis to acquire a lock with a TTL across multiple master nodes. In C#, implement it using `RedLock.net` inside a using block: if acquired, execute; otherwise, wait or return a conflict response."
+        },
+        {
+          "q": "What is the difference between message-queuing (RabbitMQ) and event-streaming (Kafka)?",
+          "a": "* **Message Queuing (RabbitMQ):** Messages are delivered to consumers and removed once acknowledged. Best for task distribution.\n* **Event Streaming (Kafka):** Messages are written to an append-only log and retained. Multiple consumers can read and replay from different offsets. Best for real-time analytics."
+        },
+        {
+          "q": "How do you handle secrets rotation in a cloud environment without restarting your .NET application?",
+          "a": "Integrate Azure Key Vault or AWS Secrets Manager into the .NET configuration pipeline using provider packages. Configure the provider to pull secrets dynamically with a reload interval (e.g. 5 minutes). Access secrets using `IOptionsMonitor<T>` or `IOptionsSnapshot<T>` so updated settings are read without restarting."
+        },
+        {
+          "q": "Explain the bulkhead isolation pattern and how it protects distributed systems from cascading failures.",
+          "a": "The Bulkhead pattern isolates resources (threads, sockets, memory) into bounded pools. If one downstream dependency fails or hangs, it can only exhaust its own thread pool block, leaving other thread pools free to serve unrelated requests. In .NET, configure Polly bulkhead policies on HTTP clients."
+        },
+        {
+          "q": "What is the difference between Serverless functions (Azure Functions) and containerized apps (App Services) for .NET?",
+          "a": "* **Azure Functions:** Event-driven, auto-scales down to zero, pay-per-execution. Best for lightweight background tasks or APIs with erratic traffic.\n* **App Services (Containers):** Dedicated hosting, continuous running processes. Best for complex APIs, legacy code, or high-throughput consistent workloads."
+        },
+        {
+          "q": "How do you implement load balancing and session affinity (sticky sessions) for scaled .NET APIs?",
+          "a": "A load balancer (like Nginx, Azure Application Gateway) routes requests across backend server pools. Session affinity binds a user session to a single server instance via a cookie. For stateless scaled APIs, disable session affinity to balance traffic evenly; store session states in Redis."
+        }
+      ]
+    },
+    {
+      "category": "Security & Identity",
+      "icon": "shield",
+      "color": "var(--magenta)",
+      "questions": [
+        {
+          "q": "Compare JWT Authentication vs. Cookie Authentication in ASP.NET Core.",
+          "a": "* **Cookie Authentication:** Server sends a cookie containing a session ticket. Browser automatically attaches it to subsequent requests. Best for traditional web pages and local domains. High risk of CSRF.\n* **JWT Authentication:** Server generates a stateless JSON Web Token containing claims. Client stores it and attaches it to the `Authorization: Bearer <token>` header. Best for Single Page Applications (SPAs) and cross-domain APIs."
+        },
+        {
+          "q": "What is SQL Injection? How does EF Core protect against it?",
+          "a": "SQL Injection occurs when malicious SQL statements are injected into application inputs to manipulate the database.\n\n**Protection:** EF Core uses **parameterized queries** for LINQ queries. Input parameters are sent separately from the SQL statement, preventing the database from executing input strings as SQL commands. Avoid raw string interpolation in `.FromSqlRaw()`."
+        },
+        {
+          "q": "What is Cross-Origin Resource Sharing (CORS)? How do you configure it in ASP.NET Core?",
+          "a": "CORS is a browser security mechanism that restricts web pages from making requests to a different domain than the one that served the page.\n\n**Configuration in Program.cs:**\n```csharp\nbuilder.Services.AddCors(options => {\n    options.AddPolicy(\"MyPolicy\", policy => {\n        policy.WithOrigins(\"https://myapp.com\").AllowAnyHeader().AllowAnyMethod();\n    });\n});\napp.UseCors(\"MyPolicy\");\n```"
+        },
+        {
+          "q": "What is Cross-Site Request Forgery (CSRF)? How do you prevent it?",
+          "a": "CSRF occurs when a malicious site tricks a user's browser into executing an unwanted action on a trusted site where the user is authenticated (using browser cookies).\n\n**Prevention:** Use Anti-Forgery Tokens. In ASP.NET Core MVC, add `[ValidateAntiForgeryToken]` to controllers. Use SameSite cookie attributes (`SameSite=Strict`)."
+        },
+        {
+          "q": "What is Cross-Site Scripting (XSS)? How does Razor help prevent it?",
+          "a": "XSS occurs when an application inserts unvalidated user input into a web page, allowing malicious scripts to execute in the user's browser.\n\n**Razor Protection:** The Razor rendering engine automatically **HTML-encodes** all output variables (e.g. `@Model.Name`) by default, converting `<script>` to `&lt;script&gt;`, neutralising execution."
+        },
+        {
+          "q": "How do you store sensitive Application Secrets (API keys, DB passwords) securely?",
+          "a": "* **Development:** Use the **User Secrets Manager** (`dotnet user-secrets`), which stores keys in a local JSON file outside the project directory, preventing accidental Git commits.\n* **Production:** Use environment variables, Azure Key Vault, or HashiCorp Vault. Never commit plain-text credentials in `appsettings.json`."
+        },
+        {
+          "q": "Compare Authentication and Authorization in ASP.NET Core.",
+          "a": "* **Authentication (Who are you?):** Verifying the user's identity (e.g., login credentials, JWT validation).\n* **Authorization (What are you allowed to do?):** Verifying if the authenticated user has permission to access a resource (e.g. role-based authorization via `[Authorize(Roles = \"Admin\")]` or policy-based authorization)."
+        },
+        {
+          "q": "What is HTTPS? Why is it mandatory, and how do you enforce it in ASP.NET Core?",
+          "a": "HTTPS encrypts all data sent between the browser and server to prevent eavesdropping and tampering.\n\n**Enforcement in Program.cs:**\n* `app.UseHttpsRedirection();` (redirects HTTP requests to HTTPS).\n* Configure HSTS (HTTP Strict Transport Security) in production."
+        },
+        {
+          "q": "Explain Role-Based vs. Policy-Based Authorization in ASP.NET Core.",
+          "a": "* **Role-Based:** Restricts access based on user groups (e.g., `[Authorize(Roles = \"Admin\")]`). Simple, but rigid.\n* **Policy-Based (Recommended):** Evaluates requirements and claims dynamically. You register a policy in DI (e.g. `policy.RequireClaim(\"MinimumAge\", \"18\")`) and apply it: `[Authorize(Policy = \"AdultsOnly\")]`."
+        },
+        {
+          "q": "What is ASP.NET Core Identity?",
+          "a": "ASP.NET Core Identity is an API that supports user login, registration, password hashing, roles, tokens, and two-factor authentication.\n\nIt handles user database persistence (typically via EF Core) and integrates with authentication middleware."
+        },
+        {
+          "q": "What is OAuth 2.0 and OpenID Connect (OIDC)? How do they differ?",
+          "a": "* **OAuth 2.0:** An authorization framework that issues access tokens to third-party applications. It handles authorization (delegated access).\n* **OIDC:** An identity layer built on top of OAuth 2.0. It introduces ID tokens containing claims to verify user authentication (identity validation)."
+        },
+        {
+          "q": "Explain the difference between Symmetric and Asymmetric JWT signing.",
+          "a": "* **Symmetric:** Uses the same secret key to sign and verify tokens (e.g., HMAC-SHA256). Fast and simple, but the secret must be shared.\n* **Asymmetric:** Uses a private key to sign the token (held by auth provider) and a public key to verify it. Safer because APIs only need the public key."
+        },
+        {
+          "q": "What is HSTS (HTTP Strict Transport Security) and how do you configure it in .NET?",
+          "a": "HSTS is a security header instructing browsers to only connect via HTTPS. In ASP.NET Core, enable it in `Program.cs` under production: `app.UseHsts();`. It protects against man-in-the-middle SSL stripping attacks."
+        },
+        {
+          "q": "What are HTTP-Only and Secure cookies and why should you use them for session tokens?",
+          "a": "* **HttpOnly:** Prevents client-side scripts from reading the cookie, protecting it from XSS token theft.\n* **Secure:** Forces the browser to transmit the cookie only over HTTPS connections, protecting it from network interception. Always use them for auth cookies."
+        },
+        {
+          "q": "What is Content Security Policy (CSP) and how does it protect against XSS?",
+          "a": "CSP is an HTTP response header that restricts which scripts, styles, and resources the browser is allowed to load. By disabling inline script execution and restricting script domains, it neutralizes XSS injection attacks even if malicious code is printed on the page."
+        },
+        {
+          "q": "Explain the Principle of Least Privilege in cloud resources and database connections.",
+          "a": "Principle of Least Privilege means granting only the minimum permissions required to perform a task. In .NET, configure database connection strings to connect as a user with limited rights (e.g. read/write but no drop table/admin permissions) and configure container execution with non-root accounts."
+        },
+        {
+          "q": "What is Refresh Token rotation and how does it secure stateless SPA logins?",
+          "a": "Every time a client requests a new JWT using a refresh token, the server returns both a new JWT and a *new* refresh token, invalidating the old one. If an attacker steals a refresh token and tries to reuse it, the server detects the reuse and invalidates the entire token family, stopping the breach."
+        },
+        {
+          "q": "How do you prevent Brute Force attacks on your authentication endpoints in ASP.NET Core?",
+          "a": "1. Implement account lockout policies inside ASP.NET Core Identity after N failed attempts.\n2. Configure IP-based rate limiting on `/api/auth/login` using middleware.\n3. Add CAPTCHA verification for suspicious traffic or repeatedly failed logins."
+        },
+        {
+          "q": "What is Claim-Based authorization and how do you add custom claims to a JWT?",
+          "a": "Claims-Based authorization evaluates key-value claims (e.g., `role: Admin`, `email: user@example.com`). You add claims when generating a JWT: create a `new Claim(\"custom_claim\", \"value\")` and include it in the `JwtSecurityToken` claims list before signing."
+        },
+        {
+          "q": "What is SQL Parameterization and why are stored procedures not always safe from SQL injection?",
+          "a": "SQL Parameterization ensures values are sent as parameters, not SQL strings. Stored procedures are NOT safe by default if they build SQL dynamically inside the database (e.g. `EXEC('SELECT * FROM Users WHERE Name = ' + @Name)`). Stored procedures must internally utilize parameterized queries to remain secure."
+        },
+        {
+          "q": "How do you securely handle file uploads to prevent remote code execution or storage exhaustion?",
+          "a": "1. Validate file extension and MIME type against a whitelist.\n2. Rename uploaded files to random GUIDs before saving to prevent path traversal.\n3. Store uploads outside the web server root (e.g. Azure Blob Storage).\n4. Set strict file size limits in IIS/Kestrel to prevent Denial of Service."
+        },
+        {
+          "q": "What is Data Protection API (DPAPI) in ASP.NET Core and why do you need Redis or Azure Key Vault for scaled containers?",
+          "a": "DPAPI encrypts keys for cookies and tokens. By default, DPAPI stores keys in the container's local file system. If you scale across multiple containers, each container gets different keys, causing authentication failures. You must configure DPAPI to persist keys in a shared Redis cache or blob storage."
+        },
+        {
+          "q": "What is the difference between hashing, encryption, and encoding?",
+          "a": "* **Hashing:** One-way, irreversible math conversion. Used for storing passwords (e.g., BCrypt).\n* **Encryption:** Two-way, reversible conversion requiring a key. Used to secure data in transit or rest (e.g. AES).\n* **Encoding:** Non-secure conversion to translate data format (e.g. Base64 encoding for binaries)."
+        },
+        {
+          "q": "Explain OAuth 2.0 Client Credentials Grant and when to use it.",
+          "a": "The Client Credentials grant allows a service to authenticate using its own credentials (client ID and secret) directly with the auth server to obtain a JWT. Use it for automated machine-to-machine integrations (e.g. a background daemon service calling a secure backend API) where no user context is present."
+        },
+        {
+          "q": "What is the OWASP Top 10 and how does modern .NET protect against these vulnerabilities by default?",
+          "a": "OWASP Top 10 is the standard list of critical web security risks. Modern .NET protects against them natively: EF Core parameterized queries prevent SQL injection, Razor Page rendering auto-escapes output to prevent XSS, Antiforgery middleware blocks CSRF, and ASP.NET Identity handles password hashing and lockout."
+        }
+      ]
+    },
+    {
+      "category": "Testing & DevOps",
+      "icon": "terminal",
+      "color": "var(--pink)",
+      "questions": [
+        {
+          "q": "Compare Unit Testing and Integration Testing. What is the goal of each?",
+          "a": "* **Unit Testing:** Tests a single class or method in isolation. Dependencies are mocked. Quick execution, helps identify logic errors.\n* **Integration Testing:** Tests multiple components together (e.g. API endpoint, Database, Middleware). Verifies that configuration, DI, database connections, and external APIs function correctly together."
+        },
+        {
+          "q": "What is Mocking in Unit Testing? How do you use Moq in C#?",
+          "a": "Mocking creates simulated objects that mimic the behavior of real dependencies, allowing you to isolate the class under test.\n\n**Moq Example:**\n```csharp\nvar mockRepo = new Mock<IProductRepository>();\nmockRepo.Setup(r => r.GetById(1)).Returns(new Product { Id = 1, Name = \"Test\" });\n\nvar controller = new ProductController(mockRepo.Object);\n```"
+        },
+        {
+          "q": "What are CI/CD pipelines? Give a simple workflow example.",
+          "a": "Continuous Integration (CI) and Continuous Deployment (CD) automate testing and delivery:\n\n* **CI Workflow:** A developer pushes code -> GitHub Actions trigger -> compiles code -> runs unit tests -> runs code analysis. Code merge is blocked if tests fail.\n* **CD Workflow:** Code merges to main -> builds Docker image -> publishes to Docker Registry -> deploys container to Kubernetes cluster."
+        },
+        {
+          "q": "What is the purpose of ASP.NET Core Health Checks?",
+          "a": "Health Checks allow orchestrators (Kubernetes, AWS ECS) to monitor the health of your application.\n\nYou register health endpoints (`/health`) that perform checks on dependencies (e.g. database connection, Redis ping). If a check fails, the orchestrator restarts the container or routes traffic away from it."
+        },
+        {
+          "q": "How does EF Core's InMemory Database differ from SQLite for Integration Testing?",
+          "a": "* **InMemory Database:** Fast, runs in memory. Trade-off: It is not a real relational database, so it doesn't support raw SQL queries, transactions, or foreign key constraints.\n* **SQLite (in-memory mode):** A real relational database that supports SQL, constraints, and transactions. Highly recommended for testing EF Core code without running a full SQL Server."
+        },
+        {
+          "q": "What is Code Coverage? Should you aim for 100% Code Coverage?",
+          "a": "Code Coverage is the percentage of code lines executed during unit tests.\n\nWhile a high coverage (70-80%) is healthy, **aiming for 100% is usually counterproductive**. It leads to testing trivial code (getters/setters) and writing fragile tests that break on minor refactorings. Focus on testing critical business logic and integration paths."
+        },
+        {
+          "q": "What is the role of Serilog in .NET and how do you configure it?",
+          "a": "Serilog is a structured logging provider. It allows sending logs to diverse targets (Sinks) like Elasticsearch, Seq, or Loggly in JSON format.\n\nConfiguration is done in `Program.cs` and `appsettings.json`, overriding the default .NET logger to include context details automatically."
+        },
+        {
+          "q": "What is xUnit and how does it differ from NUnit?",
+          "a": "Both are popular .NET testing frameworks. xUnit is the modern standard:\n\n* **xUnit:** Uses `[Fact]` for single tests, `[Theory]` for parameterized tests, and creates a new test class instance *for each test method* to prevent shared state bugs.\n* **NUnit:** Uses `[Test]` and `[TestCase]`, and reuse class instances across tests by default."
+        },
+        {
+          "q": "What is AAA Pattern in Unit Testing?",
+          "a": "AAA stands for Arrange, Act, Assert:\n\n* **Arrange:** Set up the test data, mocks, and target class.\n* **Act:** Execute the method under test.\n* **Assert:** Verify that the output or side-effects match expectations."
+        },
+        {
+          "q": "What is a Flaky Test and how do you deal with it?",
+          "a": "A flaky test passes and fails randomly without code changes.\n\n**Common Causes:** Shared database state, time-dependent logic (`DateTime.Now`), or race conditions in parallel tests.\n**Resolution:** Isolate tests (use unique DB schemas or in-memory databases per test), mock time dependencies, and disable parallel execution for tests sharing state."
+        },
+        {
+          "q": "What is Test-Driven Development (TDD) and what are its phases?",
+          "a": "TDD is a software development process relying on short cycles: Red (write a failing unit test first), Green (write minimum code to pass the test), and Refactor (clean the code while ensuring tests remain passing)."
+        },
+        {
+          "q": "Explain the difference between Mocks, Stubs, and Fakes.",
+          "a": "* **Stub:** A simple test double that returns hardcoded values to satisfy dependencies.\n* **Mock:** An advanced double that records calls to verify interactions (e.g. checking if `Save()` was called once).\n* **Fake:** A working lightweight implementation of a dependency (like an in-memory SQLite database)."
+        },
+        {
+          "q": "What is WebApplicationFactory and how do you use it for API integration testing?",
+          "a": "`WebApplicationFactory` is a built-in helper in `Microsoft.AspNetCore.Mvc.Testing`. It bootstraps your entire API host in memory for testing, allowing you to override database dependencies with SQLite, execute requests using an in-memory `HttpClient`, and verify routing, filters, and controllers."
+        },
+        {
+          "q": "What is a pipeline artifact in DevOps?",
+          "a": "A pipeline artifact is a compiled file, container image, or package produced by a build stage of a CI/CD pipeline and saved. Subsequent release stages download the artifact to deploy it directly, preventing rebuild inconsistencies."
+        },
+        {
+          "q": "What is Infrastructure as Code (IaC) and what are the benefits for .NET environments?",
+          "a": "IaC manages infrastructure using machine-readable configuration files (like Terraform, Bicep, ARM). Benefits: eliminates manual cloud configurations, enables version control of databases/VMs, and supports automated environment deployments (development, staging, production) within CI/CD pipelines."
+        },
+        {
+          "q": "What is Mutation Testing and how does it evaluate the quality of unit tests?",
+          "a": "Mutation Testing automatically injects minor logic errors (mutants, like changing `>` to `<`) into your production code and runs the unit tests. If the tests still pass, it means your tests failed to catch the mutation (surviving mutant), indicating code coverage gaps or missing assertions."
+        },
+        {
+          "q": "How do you run load and stress tests on a .NET API using tools like k6 or JMeter?",
+          "a": "Write a test script defining target HTTP requests, concurrency limits (virtual users), and duration. Run the script during load testing, checking for response latency spikes (p95/p99), CPU limits, and error rates to identify bottlenecks before deploying to production."
+        },
+        {
+          "q": "What is Blue-Green Deployment and how does it minimize risk during releases?",
+          "a": "Blue-Green deployment maintains two identical production environments (Blue is active, Green is standby). The new version is deployed and tested on Green. Once verified, the load balancer switches traffic to Green instantly. If an issue occurs, traffic routes back to Blue, mitigating outage downtime."
+        },
+        {
+          "q": "How do you implement canary releases for a .NET microservice?",
+          "a": "A Canary Release deploys the new microservice version to a tiny subset of production infrastructure (serving e.g. 5% of traffic). You monitor error rates and latency. If telemetry shows success, you gradually route the remaining 95% of traffic, reducing blast radius."
+        },
+        {
+          "q": "What is the difference between Continuous Delivery and Continuous Deployment?",
+          "a": "* **Continuous Delivery:** Automated build and test pipeline where every success produces a release package ready for production. Deployment requires manual approval.\n* **Continuous Deployment:** Extends delivery by deploying every successful change directly to production automatically, requiring robust automated testing."
+        },
+        {
+          "q": "What is the purpose of static code analysis (SonarQube) in CI/CD pipelines?",
+          "a": "Static code analyzers scan source code without running it to detect code smells, potential bugs, style violations, and security vulnerabilities (SQL injection, unsafe configurations) in your C# code, enforcing standards before code review."
+        },
+        {
+          "q": "How do you mock database transactions in integration tests?",
+          "a": "Instead of using a real database, use a mock of your unit of work or repository interfaces. If using EF Core integration tests, use an in-memory SQLite provider and keep the transaction open for the duration of the test, rolling it back in the clean-up block to keep the database state clean."
+        },
+        {
+          "q": "Explain contract testing (e.g., using Pact) and why it is useful for microservices.",
+          "a": "Contract testing verifies that API request/response structures between consumer and provider services match. The consumer generates a contract JSON file. The provider validates its code against the contract. This prevents breaking changes during independent deployments without running full E2E environments."
+        },
+        {
+          "q": "What is database migration rollback strategy and how do you test it?",
+          "a": "A rollback strategy defines how to revert database schema changes if a deployment fails. Test it by applying migrations on a test database: `dotnet ef database update <migration_name>`, checking the schema, then rolling back: `dotnet ef database update <previous_name>` to verify column restores succeed."
+        },
+        {
+          "q": "What is container orchestration and how does Kubernetes coordinate .NET containers?",
+          "a": "Container orchestration manages container scaling, networking, and deployment. Kubernetes monitors pod health, auto-restarts failed .NET containers, distributes traffic across replicas, and automates rolling updates, ensuring high availability of containerized services."
+        }
+      ]
+    },
+    {
+      "category": "C# Evolution",
+      "icon": "code",
+      "color": "var(--orange)",
+      "questions": [
+        {
+          "q": "What are Nullable Reference Types in C#? How do they improve code safety?",
+          "a": "Introduced in C# 8, Nullable Reference Types make all reference variables non-nullable by default.\n\n* `string name;` -> Cannot be null. Compiler raises a warning if you try to assign null.\n* `string? name;` -> Can be null. Forces developer to perform null checks before dereferencing, reducing `NullReferenceException` crashes."
+        },
+        {
+          "q": "What are Records in C#? How do they differ from classes?",
+          "a": "Introduced in C# 9, a `record` is a reference type designed to represent immutable data models:\n\n* **Value Equality:** Two record instances with identical properties are considered equal (`==` compares properties, not reference addresses).\n* **Immutability:** Properties are typically read-only using `init` setters.\n* **Consise Syntax:** `public record Product(int Id, string Name);` generates properties, constructor, and equals overrides automatically."
+        },
+        {
+          "q": "What is Pattern Matching in C#? Give an example.",
+          "a": "Pattern Matching allows testing values against specific shapes and extracting data from them.\n\n**Example:**\n```csharp\nif (shape is Circle c) {\n    return Math.PI * c.Radius * c.Radius;\n}\n```\nC# 9+ supports advanced pattern switches:\n```csharp\nstring category = age switch {\n    < 12 => \"Child\",\n    < 18 => \"Teenager\",\n    _ => \"Adult\"\n};\n```"
+        },
+        {
+          "q": "What are Primary Constructors in C# 12?",
+          "a": "Primary Constructors allow defining constructor parameters directly on the class header:\n\n```csharp\npublic class ProductService(IProductRepository repository) {\n    public Product Get(int id) => repository.GetById(id);\n}\n```\nThis eliminates boilerplate constructor definition and private field assignments, keeping the code clean."
+        },
+        {
+          "q": "What is the difference between constant (const) and read-only (readonly) variables in C#?",
+          "a": "* **const:** Compile-time constant. Values are replaced in the IL code directly at compile time. Must be defined at declaration.\n* **readonly:** Run-time constant. Values can be assigned either at declaration or inside the constructor, allowing values to change based on startup parameters."
+        },
+        {
+          "q": "What are Collection Expressions in C# 12?",
+          "a": "Collection Expressions introduce a unified syntax `[...]` to initialize collections (arrays, lists, spans):\n\n```csharp\nint[] row = [1, 2, 3];\nList<string> names = [\"Alice\", \"Bob\"];\n```\nSupports the spread operator `..` to concatenate: `int[] combined = [..row, 4, 5];`."
+        },
+        {
+          "q": "What is String Interpolation in C#? How do you write multi-line strings?",
+          "a": "String interpolation uses `$` to embed expressions: `$\"Hello, {name}\"`.\n\nUse **Raw String Literals** (C# 11) for complex multi-line strings or JSON structures: \n```csharp\nstring json = \"\"\"\n{\n  \"id\": 1,\n  \"name\": \"Test\"\n}\n\"\"\";\n```"
+        },
+        {
+          "q": "What is the purpose of File-Scoped Namespaces in C# 10?",
+          "a": "File-scoped namespaces replace braces with a semicolon: `namespace MyProject.Services;`.\n\nThis reduces indentation by one level across the entire file, improving code readability."
+        },
+        {
+          "q": "What is the difference between 'var' and 'dynamic' in C#?",
+          "a": "* **var:** Strongly-typed. The compiler infers the type at compile-time. Once declared, the type cannot change.\n* **dynamic:** Dynamically-typed. Type resolution is deferred to runtime. Bypasses compiler check, which can lead to runtime crashes if methods or properties don't exist."
+        },
+        {
+          "q": "Explain LINQ Deferred Execution.",
+          "a": "LINQ queries do not execute when defined. They execute only when you iterate over the query (e.g. inside `foreach` or by calling `.ToList()`, `.ToArray()`).\n\nThis allows constructing complex queries dynamically in multiple steps before sending the execution command to the database."
+        },
+        {
+          "q": "What are Init-Only setters (init) and how do they support object initializers with immutability?",
+          "a": "The `init` accessor allows setting a property during object creation (object initializers), but marks it read-only once instantiation completes. This supports writing clear instantiation code while enforcing object immutability post-construction."
+        },
+        {
+          "q": "What is the with expression in C# and how is it used with records?",
+          "a": "The `with` expression performs non-destructive mutation on record instances. It creates a copy of the record with modified values for specified properties, leaving the original record instance untouched: `var copy = order with { Price = 20 };`."
+        },
+        {
+          "q": "What are Top-Level Statements and how do they simplify Program.cs?",
+          "a": "Top-Level Statements (C# 9) allow writing execution code directly without enclosing it in namespace blocks or `class Program { static void Main() }`. The compiler generates the wrapper structure implicitly, keeping entry points clean."
+        },
+        {
+          "q": "What are Global Using directives and how do they reduce file headers?",
+          "a": "`global using` applies namespaces globally across all files in a project: `global using System;`. Typically placed in a single `GlobalUsings.cs` file, they clean file headers by removing repetitive namespace lists."
+        },
+        {
+          "q": "What is the required modifier on properties and how does it prevent missing assignments?",
+          "a": "Introduced in C# 11, the `required` modifier forces compilers to enforce property initialization during instantiation (via constructor or object initializers). If omitted, a compile error occurs, preventing unassigned values."
+        },
+        {
+          "q": "What are Default Interface Methods and why were they introduced?",
+          "a": "Default Interface Methods allow interfaces to define a concrete body implementation. They were introduced to enable interface evolution (adding methods to existing interfaces without breaking third-party implementations that implement them)."
+        },
+        {
+          "q": "What is covariant return types in C# overrides?",
+          "a": "Covariant return types allow an overridden method in a derived class to return a type derived from the type returned by the base method, bypassing rigid type constraints (e.g., returning a `DerivedClass` instead of `BaseClass`)."
+        },
+        {
+          "q": "Explain pattern matching enhancement: List Patterns in C# 11.",
+          "a": "List Patterns allow matching arrays or lists against sequences of patterns. You match shapes like `[1, 2, ..]` (starts with 1 and 2) or `[_, var x]` (exactly two elements, bind x to second), supporting fast data slicing and checks."
+        },
+        {
+          "q": "What is the ref struct type and what are its compiler restrictions?",
+          "a": "A `ref struct` is a structure allocated only on the stack. Restrictions: cannot be boxed to `object`, cannot be used inside async methods (across `await`), cannot be stored as fields in regular classes, and cannot implement interfaces."
+        },
+        {
+          "q": "What is the difference between System.Range and System.Index in C#?",
+          "a": "* **System.Index:** Represents a relative collection position. `^1` represents the last item (length - 1).\n* **System.Range:** Represents a sub-range defined by start and end indices: `1..^1` (everything except first and last)."
+        },
+        {
+          "q": "Explain C# 11's UTF-8 String Literals (u8 suffix) and why they are useful for high-performance APIs.",
+          "a": "Suffixing a string with `u8` (e.g., `\"hello\"u8`) compiles it directly as a `ReadOnlySpan<byte>` containing UTF-8 bytes. This avoids runtime UTF-16 conversion allocations when writing directly to sockets or HTTP response streams."
+        },
+        {
+          "q": "What are Native Integers (nint and nuint) and when should you use them?",
+          "a": "`nint` and `nuint` represent integers whose width matches the native pointer size of the execution platform (32-bit or 64-bit). Use them for low-level memory allocation, interop with native C libraries, and high-performance pointer math."
+        },
+        {
+          "q": "What is the readonly struct and what performance benefit does it offer?",
+          "a": "A `readonly struct` forces all its fields to be read-only, declaring it immutable. Performance benefit: when passed to methods, the compiler optimizes parameter copies by reference (`in` parameters) without creating defensive local copies."
+        },
+        {
+          "q": "What is the null-coalescing assignment operator (??=)?",
+          "a": "The `??=` operator assigns the value of the right-hand operand to the left-hand operand only if the left-hand operand evaluates to null. It provides a clean, single-line alternative to nested null-checking if-blocks."
+        },
+        {
+          "q": "Explain the params keyword and how collection expressions impact it in modern C#.",
+          "a": "The `params` keyword allows passing a variable number of method arguments. In C# 12, collection expressions allow passing arrays/collections seamlessly inside method calls using `[...]` syntax, simplifying parameters and allocation types."
+        }
+      ]
+    },
+    {
+      "category": "Leadership & Strategy",
+      "icon": "users",
+      "color": "var(--magenta)",
+      "questions": [
+        {
+          "q": "What is Technical Debt and how should a Senior Developer manage it?",
+          "a": "Technical debt is the implied cost of additional refactoring caused by choosing an easy (quick) solution now instead of a better approach.\n\n**Management:**\n1. **Document it:** Track it in the backlog.\n2. **Clean as you go:** Apply the Boy Scout Rule (leave code cleaner than you found it).\n3. **Allocate Time:** Advocate for dedicating 10-20% of sprint capacity to refactoring."
+        },
+        {
+          "q": "How do you conduct an effective Code Review as a Senior Developer?",
+          "a": "Code reviews should focus on design, security, and knowledge sharing:\n\n1. **Automate Syntax Check:** Use Roslyn Analyzers and EditorConfig to avoid debating style rules.\n2. **Focus on Logic:** Check for concurrency bugs, resource leaks, and edge cases.\n3. **Tone:** Keep comments constructive and question-based (e.g. \"Did you check for null here?\")."
+        },
+        {
+          "q": "How do you estimate software tasks effectively?",
+          "a": "1. **Break it down:** Split tasks into small units (<1 day each).\n2. **Identify Unknowns:** If requirements are unclear, do a \"Spike\" (timed research task) first.\n3. **Include overhead:** Factor in testing, reviews, and deployment time.\n4. **Range estimation:** Give a pessimistic and optimistic timeline."
+        },
+        {
+          "q": "What is the Agile methodology and what are key Scrum ceremonies?",
+          "a": "Agile is an iterative software development approach focused on collaboration and flexibility.\n\n**Scrum Ceremonies:**\n* **Sprint Planning:** Defining sprint goals.\n* **Daily Standup:** Alignment on progress and blockers.\n* **Sprint Review:** Demoing completed features.\n* **Sprint Retrospective:** Reviewing what went well and what can be improved."
+        },
+        {
+          "q": "How do you mentor Junior Developers in a team?",
+          "a": "1. **Pair Programming:** Write code together to share logic patterns.\n2. **Explain the 'Why':** Don't just give answers, explain the underlying architecture decisions.\n3. **Constructive Feedback:** Review code with empathy and highlight positive efforts.\n4. **Delegate Ownership:** Give them complete ownership of small modules to build confidence."
+        },
+        {
+          "q": "How do you handle conflict in technical decisions within a team?",
+          "a": "1. **Focus on Facts:** Compare solutions objectively using architectural metrics (latency, cost, complexity).\n2. **Prototype (Spike):** Write quick code spikes for both solutions to compare them.\n3. **Decide and Commit:** Once a decision is made, align on executing it together, even if some disagreed initially."
+        },
+        {
+          "q": "What is the Difference between a Feature and a Technical Requirement?",
+          "a": "* **Feature (User Story):** User-facing capability (e.g., \"As a user, I want to checkout using PayPal\").\n* **Technical Requirement:** Engineering constraint needed to support the feature (e.g. \"Implement database indexing on the Transactions table for querying payment logs\")."
+        },
+        {
+          "q": "What is Conway's Law and why should we care?",
+          "a": "Organizations design systems that mirror their own communication structures. Senior developers care because bad team structure leads to bad software architecture (e.g., tight coupling between microservices if teams are not decoupled)."
+        },
+        {
+          "q": "How do you balance Feature Delivery and Code Quality?",
+          "a": "1. **Define MVP:** Focus on delivering core value first.\n2. **Do not compromise core quality:** Write unit tests and maintain clean DI separation even under pressure.\n3. **Negotiate Tech Debt:** If shortcuts are taken, document them and schedule cleanup in the next sprint."
+        },
+        {
+          "q": "What is DevOps and how does it affect a developer's workflow?",
+          "a": "DevOps combines Development (Dev) and Operations (Ops) to automate and speed up software delivery.\n\nIt changes workflows by giving developers ownership of their pipelines, containerization, and monitoring, rather than just throwing code over the wall to an operations team."
+        },
+        {
+          "q": "What is the difference between a Tech Lead and a Senior Developer?",
+          "a": "* **Senior Developer:** Focuses primarily on execution, writing clean code, and solving complex technical tasks individually.\n* **Tech Lead:** Focuses on delivery direction, aligning technical design with business goals, coordinating team workflows, and resolving tech blockers."
+        },
+        {
+          "q": "How do you conduct an effective post-mortem or RCA (Root Cause Analysis) after a production incident?",
+          "a": "1. Gather timelines and error logs.\n2. Focus on processes and systems, not individuals (blameless post-mortem).\n3. Find the root cause using the '5 Whys' technique.\n4. Create actionable JIRA tasks to prevent the issue from happening again."
+        },
+        {
+          "q": "What is the difference between modular architecture and microservices from a team communication perspective?",
+          "a": "* **Modular Monolith:** Teams share a single deployment pipe. Communicating schema and project dependencies is easy, but code limits require strict enforcement.\n* **Microservices:** Teams deploy independently, reducing coordinator overhead, but requires strict API contracts."
+        },
+        {
+          "q": "How do you design and document a system architecture using the C4 model?",
+          "a": "The C4 model structures documentation in four levels: System Context (who uses it), Containers (applications/DBs), Components (modules inside containers), and Code (classes). It provides a standard, visual way to communicate design."
+        },
+        {
+          "q": "What is inner-sourcing and how does it benefit large engineering teams?",
+          "a": "Inner-sourcing is adopting open-source methodologies (like forks, PR reviews, documentation) inside an organization. It allows teams to contribute features to other internal repositories directly, reducing developer bottlenecks."
+        },
+        {
+          "q": "How do you manage stakeholders' expectations when refactoring core legacy modules?",
+          "a": "Frame the refactor in terms of business value: reduced incident rates, faster feature delivery, or lower hosting costs. Break down the refactoring into small, deployable increments to show continuous progress without blocking features."
+        },
+        {
+          "q": "Explain the concept of 'Cognitive Load' in team structure and software design.",
+          "a": "Cognitive Load is the amount of mental effort required to understand a system. High cognitive load slows down developers. Reduce it by keeping class methods small, designing simple APIs, and dividing teams so they own small, bounded sub-domains."
+        },
+        {
+          "q": "What is the 'Boy Scout Rule' and how do you enforce it without bloating PRs?",
+          "a": "The Boy Scout Rule states: always leave code cleaner than you found it. Enforce it by making small adjustments (rename variables, fix comments) in files you are already changing. Avoid rewriting unrelated modules in the same PR; keep cleanups scoped."
+        },
+        {
+          "q": "How do you identify if a team member is burning out and how do you support them?",
+          "a": "Signs of burnout: decreased performance, withdrawal from discussions, increased cynicism, or erratic hours. Support them by having open 1-on-1s, reducing their task load, encouraging them to take time off, and helping them re-prioritize work."
+        },
+        {
+          "q": "What is the difference between business value and technical excellence? How do you explain this to product managers?",
+          "a": "* **Business Value:** Solving user problems and generating revenue.\n* **Technical Excellence:** Keeping the codebase maintainable and scaling stable. Explain to PMs that technical debt is like a financial loan: ignoring it increases 'interest' payments, slowing feature development to a crawl."
+        },
+        {
+          "q": "How do you plan a technology migration (e.g. migrating from ASP.NET MVC to React/.NET API) over multiple quarters?",
+          "a": "1. Define the end state. 2. Build a coexistence strategy (like routing paths using YARP). 3. Migrate core features in phases. 4. Collect metrics on each phase. 5. Decommission the old system once migration is completed."
+        },
+        {
+          "q": "What is the role of RFCs (Request for Comments) in technical design processes?",
+          "a": "An RFC is a design document describing a proposed solution, architecture, and trade-offs before writing code. It invites team members to review, discuss, and align on technical directions, promoting collaboration and catching design issues early."
+        },
+        {
+          "q": "How do you advocate for security best practices when business priorities focus exclusively on new features?",
+          "a": "Frame security as risk management. Highlight the potential business costs of data breaches (regulatory fines, loss of customer trust, system downtime). Integrate automated security scan tools into the build pipeline to catch issues without slowing down devs."
+        },
+        {
+          "q": "What is the difference between horizontal and vertical growth for an engineer?",
+          "a": "* **Vertical Growth:** Advancing up the career ladder into leadership (Tech Lead, Architect, Manager).\n* **Horizontal Growth:** Expanding technical skills, learning new frameworks, or mastering specialized domains (DevOps, Security) while staying in an execution role."
+        },
+        {
+          "q": "How do you design a disaster recovery plan (RTO/RPO) for a distributed .NET system?",
+          "a": "* **Recovery Time Objective (RTO):** Target time to restore service after failure.\n* **Recovery Point Objective (RPO):** Maximum acceptable data loss duration. Design DR by setting up automated database replication, configuring geo-redundant backups, and writing deployment scripts."
+        }
+      ]
+    },
+    {
+      "category": "Scenarios & Debugging",
+      "icon": "wrench",
+      "color": "var(--yellow)",
+      "questions": [
+        {
+          "q": "Scenario: Your production database CPU reaches 100% and queries start timing out. How do you troubleshoot?",
+          "a": "1. **Identify hot queries:** Run database monitoring scripts to find slow-running queries (e.g., missing indexes causing Table Scan).\n2. **Scale DB temporarily:** Add database replicas or upgrade database tier to handle load.\n3. **Apply caching:** Put Redis in front of high-traffic query endpoints.\n4. **Fix EF Core code:** Add indexes in Fluent API, run `.AsNoTracking()`, and verify queries do not fetch unnecessary data."
+        },
+        {
+          "q": "Scenario: Users complain about random errors on login. Logs show NullReferenceException in authentication handler. How do you debug?",
+          "a": "1. **Locate Line Number:** Check log stack trace to identify the exact line of code.\n2. **Identify variables:** Find which reference variable was null (e.g. database user object was null, or client sent missing authorization headers).\n3. **Add null check / fallback:** Add guard clauses `if (user is null)` and return descriptive error responses (`Unauthorized`) rather than letting the application crash."
+        },
+        {
+          "q": "Scenario: A client application experiences CORS errors when calling your API. How do you resolve it?",
+          "a": "1. **Identify origin:** Check the request header `Origin` sent by the browser.\n2. **Update API CORS Policy:** In `Program.cs`, add the client origin URL to the CORS policy.\n3. **Middleware Order:** Ensure `app.UseCors()` is placed **before** `app.UseAuthorization()` in the pipeline configuration."
+        },
+        {
+          "q": "Scenario: A legacy .NET Framework app needs migration to .NET Core. What are your first steps?",
+          "a": "1. **Run Upgrade Assistant:** Use Microsoft's .NET Upgrade Assistant to get a compatibility report.\n2. **Upgrade libraries:** Upgrade internal dependencies to .NET Standard 2.0.\n3. **Migrate configuration:** Change XML-based `web.config` configurations to JSON-based `appsettings.json` format.\n4. **Re-write presentation:** Port MVC views or WebForms to ASP.NET Core Razor Pages or Blazor."
+        },
+        {
+          "q": "Scenario: An API endpoint that queries transactions takes 10 seconds to load. How do you optimize it?",
+          "a": "1. **Analyze query:** Run query in DB. Check execution plan to ensure it uses indexes.\n2. **Add pagination:** Implement offset-based pagination (`.Skip(10).Take(10)`) so the client reads small pages of transactions instead of downloading the entire database table.\n3. **Project to DTO:** Select only needed fields: `.Select(t => new TransactionDto { Id = t.Id, Amount = t.Amount })` to avoid downloading full entity graphs."
+        },
+        {
+          "q": "Scenario: Your system is experiencing memory leaks in production, but you cannot attach a debugger. What do you do?",
+          "a": "**1. Capture Memory Dump:** Use `dotnet-dump` CLI tool which works without debugger attachment and is non-intrusive: `dotnet-dump collect -p <PID>`\n**2. Download and Analyze:** Move the dump file to a local machine with the same OS version.\n**3. Run Diagnostic commands:**\n* `sos dumpheap -stat` (Inspect which classes are using the most memory).\n* `sos gcroot <address>` to find the chain of references holding the object in memory.\n**4. Alternative (APM):** Check heap metrics in APM (Datadog/Dynatrace) to observe if Gen 0, Gen 1, Gen 2, or LOH is growing."
+        },
+        {
+          "q": "Scenario: Your microservice experiences periodic timeouts when calling an external payment provider. How do you handle it?",
+          "a": "**1. Polly Integration:** Add resilience policies to `HttpClient`.\n* *Timeout Policy:* Set request timeout to 5 seconds (fail fast).\n* *Retry Policy:* Retry 3 times with exponential backoff and jitter. Only retry on transient errors.\n* *Circuit Breaker:* If timeouts exceed 50% in 10s, open the circuit for 30s to prevent overloading the payment provider.\n**2. Asynchronous/Outbox Fallback:** If the API can process payments asynchronously, write the payment request to an Outbox table and process it via a background queue. If it fails, retry later without blocking the client HTTP request."
+        },
+        {
+          "q": "Scenario: Designing an API with a strict SLA of <50ms p95 latency. How do you ensure this in C#?",
+          "a": "**1. Bypass EF Core tracking:** Use `.AsNoTracking()` or Dapper for database reads.\n**2. Pre-compile Queries:** Use EF Core Compiled Queries.\n**3. Avoid Heap Allocations on hot paths:** Use `ValueTask` for async methods that complete synchronously, use `Span<T>` and `ReadOnlySpan<char>` for parsing, and use `ArrayPool<T>` for buffers.\n**4. Caching:** Put a fast caching layer (Redis / In-Memory cache) in front of the database.\n**5. GC Optimization:** Enable Server GC with Concurrent GC. Pre-allocate collections to prevent array copying."
+        },
+        {
+          "q": "Scenario: Designing a distributed lock manager in C# to prevent double-processing of payments across 10 API instances.",
+          "a": "**1. Tool Choice:** Use **Redis** with the Redlock algorithm (via `RedLock.net` library). Do not roll your own lock.\n**2. Implementation:**\n```csharp\nvar lockKey = $\"payment:lock:{paymentId}\";\nusing (var redLock = await _lockFactory.CreateLockAsync(lockKey, TimeSpan.FromSeconds(10))) {\n    if (redLock.IsAcquired) {\n        // Execute payment processing\n    } else {\n        throw new ConflictException(\"Payment is already being processed.\");\n    }\n}\n```\n**3. Details:** Set lease time (e.g. 10s) so the lock is auto-released if the node crashes, preventing permanent deadlock."
+        },
+        {
+          "q": "Scenario: Your ASP.NET Core service experiences deadlock on startup. What is the most likely cause?",
+          "a": "**1. Cause:** Synchronous blocking on asynchronous operations during DI registration or startup configuration (e.g. in `ConfigureServices` or constructors).\n* E.g., `services.AddSingleton(provider => FetchConfigAsync().Result);`\n**2. Mechanism:** The thread blocks on `.Result` while waiting for the async method to run, causing a deadlock.\n**3. Resolution:** Avoid doing database or network operations inside DI constructors. Use an `IHostedService` or `IStartupFilter` to execute asynchronous startup tasks:\n```csharp\npublic class AppInitializer : IHostedService {\n    public async Task StartAsync(CancellationToken token) {\n        await FetchConfigAsync();\n    }\n    public Task StopAsync(CancellationToken token) => Task.CompletedTask;\n}\n```"
+        },
+        {
+          "q": "Scenario: Your web app works perfectly in Dev/Staging but returns HTTP 502 Bad Gateway randomly in production behind Nginx/IIS.",
+          "a": "1. Check server event logs and Nginx `error.log`.\n2. Look for ASP.NET Core process crashes (Kestrel exiting due to unhandled exceptions).\n3. Check if thread pool exhaustion is causing Kestrel to reject incoming socket connections.\n4. Verify if Kestrel port configuration matches the Nginx proxy pass settings."
+        },
+        {
+          "q": "Scenario: A third-party payment provider sends webhooks out-of-order, causing double-accounting bugs.",
+          "a": "1. Store webhooks in a history table with their event ID.\n2. Enforce idempotency: check if the event ID was already processed.\n3. Verify webhook event timestamps; if a newer status was already processed (e.g. `Refunded`), ignore older status events (e.g. `Authorized`) arriving late."
+        },
+        {
+          "q": "Scenario: The container CPU usage spikes to 100% every hour for 2 minutes. Logs show no errors.",
+          "a": "1. Check for scheduled background tasks (`IHostedService`, Hangfire) running hourly.\n2. Look at CPU traces during the spike using `dotnet-trace` to identify which method runs continuously.\n3. Check if Gen 2 garbage collection sweeps are triggering because of temporary memory accumulations."
+        },
+        {
+          "q": "Scenario: A developer committed a database connection string containing a plain-text production password to Git.",
+          "a": "1. Immediately rotate the database password.\n2. Revoke database access for the exposed credential.\n3. Use BFG Repo-Cleaner or `git filter-repo` to erase the commit containing the secret from history.\n4. Force-push to remote.\n5. Move credentials to vault storage."
+        },
+        {
+          "q": "Scenario: After updating a NuGet package, your application throws a MissingMethodException at runtime on startup.",
+          "a": "1. Check for library dependency version conflicts (assembly redirect issues).\n2. Clean the project and rebuild: `dotnet clean && dotnet build`.\n3. Ensure all projects in the solution references compatible package versions.\n4. Look at the stack trace to identify which DLL is attempting to invoke the missing method."
+        },
+        {
+          "q": "Scenario: Your distributed tracing shows a request hops across 5 microservices, adding up to 8 seconds of latency.",
+          "a": "1. Check trace spans to see which microservice contributes the most latency.\n2. Look for N+1 HTTP calls between services (calling service B in a loop).\n3. Optimize internal calls by rewriting synchronous HTTP calls to direct gRPC or by using message-driven eventual consistency."
+        },
+        {
+          "q": "Scenario: A high-throughput queue processor starts dropping messages or processing them extremely slowly.",
+          "a": "1. Check log errors for database timeouts or lock contention.\n2. Measure message consumer execution time.\n3. Scale the queue consumers horizontally (add replica instances).\n4. Ensure consumers are using async handlers to avoid blocking ThreadPool threads."
+        },
+        {
+          "q": "Scenario: An API endpoint throws a NullReferenceException but the stack trace has no line numbers (compiled in Release mode).",
+          "a": "1. Ensure PDB files are published alongside application binaries.\n2. Check the stack trace class and method name to isolate the error location.\n3. Add logs before the suspected lines to trace parameter values.\n4. Re-compile local code in Release mode with PDBs enabled to trace line numbers."
+        },
+        {
+          "q": "Scenario: A customer reports that their data was overwritten by another user's update, but no error was thrown.",
+          "a": "1. Check if Optimistic Concurrency (`[Timestamp]`) is enabled on the entity.\n2. Look for dynamic SQL updates that modify columns without checking row versions.\n3. Ensure EF Core tracking isn't bypassed for updates without validation. Enable concurrency tokens to catch conflicts."
+        },
+        {
+          "q": "Scenario: An integration test passes on the build agent but fails locally on developers' machines.",
+          "a": "1. Check for local environment variables overriding configuration settings.\n2. Verify if the test database port is occupied locally.\n3. Ensure local test runner settings (like parallel execution or test isolation) match the build pipeline configurations."
+        },
+        {
+          "q": "Scenario: Your .NET application memory increases continuously during load testing and never drops, even after load stops.",
+          "a": "1. Run `dotnet-dump collect` to capture heap memory snapshots.\n2. Identify objects with rising instances (e.g. unclosed event subscriptions, statics).\n3. Use memory profilers to search GC roots for the growing classes.\n4. Verify if HTTP Clients or DB context scopes are leaking."
+        },
+        {
+          "q": "Scenario: A database migration fails halfway through execution, leaving the schema in an inconsistent state.",
+          "a": "1. If the database supports transactions on DDL (Postgres), rollback the transaction.\n2. For databases without DDL transactions (MySQL), manually clean up the partially created tables/columns.\n3. Repair the `__EFMigrationsHistory` table by removing the failed migration record."
+        },
+        {
+          "q": "Scenario: A client complains that they receive a 413 Payload Too Large error when uploading files through the API.",
+          "a": "1. Check file size configurations in Nginx (`client_max_body_size`) or IIS limits.\n2. In ASP.NET Core controller, apply: `[RequestSizeLimit(100_000_000)]`.\n3. Ensure Kestrel limits are adjusted in Program.cs: `options.Limits.MaxRequestBodySize = ...`."
+        },
+        {
+          "q": "Scenario: Your background worker is failing to process items because the DB context has been disposed before execution completes.",
+          "a": "1. Ensure the background worker resolves the `DbContext` from a scoped service provider.\n2. Inside the background thread handler, write:\n```csharp\nusing (var scope = _serviceScopeFactory.CreateScope()) {\n    var context = scope.ServiceProvider.GetRequiredService<MyDbContext>();\n    // execute database calls\n}\n```"
+        },
+        {
+          "q": "Scenario: An API endpoint works fine for page sizes of 10 but throws a TimeoutException when page size is set to 100.",
+          "a": "1. Check SQL Server CPU/Disk usage during page size 100 queries.\n2. Identify missing indexes on search/filter columns.\n3. Look for N+1 queries executing child entities for page items. Optimize using `.Include()` or projection to fetch only needed properties."
+        }
+      ]
+    }
+  ],
+  "quizQuestions": [
+    {
+      "q": "You are experiencing CPU spikes and performance degradation on a high-throughput ASP.NET Core API on Linux. After running dotnet-dump and analyzing the heap, you notice a massive count of Gen 0/1 Garbage Collections. What is the most likely cause of this performance bottleneck?",
+      "options": [
+        "Workstation Garbage Collection is enabled, restricting GC to a single thread under multi-core workloads.",
+        "High frequency allocation of temporary, short-lived large objects (e.g. buffers >= 85KB) causing LOH fragmentation and constant GC sweeps.",
+        "Sync-over-async blocking calls like Task.Wait() or .Result causing ThreadPool starvation and thread creation overhead.",
+        "The database connection pool is exhausted, causing the EF Core DbContext to keep large object graphs in memory."
+      ],
+      "correctIndex": 1,
+      "explanation": "Allocating temporary objects >= 85,000 bytes places them directly in the Large Object Heap (LOH). Because the LOH is not compacted by default (relocating large chunks is expensive), it fragments. This triggers frequent full-sweep GC collections (Gen 2 / LOH), consuming massive CPU. Using `ArrayPool<T>` resolves this by recycling buffers."
+    },
+    {
+      "q": "A developer is writing a high-frequency parsing method in C# and wants to process substrings without allocating heap memory. Which of the following designs is valid and maximizes performance?",
+      "options": [
+        "Return StringSegment from Microsoft.Extensions.Primitives which wraps the string and provides slicing.",
+        "Use ReadOnlySpan<char> by calling string.AsSpan() and slicing it, keeping it inside ref struct methods.",
+        "Convert the string to a char[] and store it inside a ThreadLocal<char[]> cache.",
+        "Use Memory<char> as a private readonly field in a Singleton service to slice substrings asynchronously."
+      ],
+      "correctIndex": 1,
+      "explanation": "`ReadOnlySpan<char>` represents a contiguous region of arbitrary memory. Calling `.AsSpan()` and slicing it does NOT allocate a new string on the heap, it simply creates a new Span pointing to a window of the existing string on the stack. Because it is a `ref struct`, it is guaranteed to only live on the stack."
+    },
+    {
+      "q": "You have a high-traffic microservice that frequently executes an async method. In >95% of cases, the data is already in the local cache, allowing the method to complete synchronously. What is the most memory-efficient return type for this method?",
+      "options": [
+        "Task<T>, because modern .NET runtime automatically caches all Task instances.",
+        "ValueTask<T>, because it is a struct that avoids heap allocation when the task completes synchronously.",
+        "TaskCompletionSource<T>, because it allows completing the task manually in a thread-safe manner.",
+        "IAsyncEnumerable<T>, because it compiles to a state machine that streams the cached results."
+      ],
+      "correctIndex": 1,
+      "explanation": "`ValueTask<T>` is a value type struct. When a method returns `ValueTask<T>` and completes synchronously, it does not allocate any object on the managed heap. If it completes asynchronously, it will allocate the internal `Task` object. For hot-paths where cache hits are high (>90%), this reduces heap allocations to near-zero."
+    },
+    {
+      "q": "An ASP.NET Core Web API is experiencing random timeouts and hanging requests under heavy load. Checking the logs, you find lock contention and the thread pool size reaching its hard limit. You find this code: 'var data = FetchDataAsync().Result;'. What is happening under the hood?",
+      "options": [
+        "Memory leak in the FetchDataAsync method is exhausting the heap, causing the GC to freeze all threads.",
+        "The JIT compiler is deadlocking because it cannot compile FetchDataAsync while the main thread is blocked.",
+        "Sync-over-Async blocking: Thread A blocks on .Result while waiting for the async continuation, which is queued to the ThreadPool. Under load, all ThreadPool threads get blocked, causing starvation.",
+        "The connection pool of the SQL Server database is exhausted, causing the thread to block indefinitely."
+      ],
+      "correctIndex": 2,
+      "explanation": "Calling `.Result` or `.Wait()` blocks the current thread until the async task completes. In a multithreaded application like ASP.NET Core, the async continuation needs a ThreadPool thread to run. If all ThreadPool threads are blocked waiting for their respective tasks to complete, no threads are available to run the continuations, creating a classic ThreadPool Starvation deadlock."
+    },
+    {
+      "q": "You are configuring the database architecture for a multi-tenant .NET SaaS application. Security requires strict tenant data isolation, but budget requires minimizing database costs. What isolation strategy in EF Core balances both requirements?",
+      "options": [
+        "Separate Databases: Route each request to a different tenant connection string via a custom IDbContextFactory.",
+        "Shared Database, Separate Schemas: Dynamically map schemas in DbContext.OnModelCreating using tenant claims.",
+        "Shared Database, Shared Schema: Apply a Global Query Filter in EF Core matching the tenant ID, combined with Tenant DbContext pooling.",
+        "Bypass EF Core and use ADO.NET with parameterized queries containing the tenant ID in every SQL command."
+      ],
+      "correctIndex": 2,
+      "explanation": "Applying a Global Query Filter (`HasQueryFilter(e => e.TenantId == _tenantProvider.TenantId)`) inside EF Core ensures that all queries automatically append `WHERE TenantId = @tenantId`. This is cost-efficient (single database) and secure (developers cannot forget to filter). Combining it with DbContext Pooling maximizes throughput."
+    },
+    {
+      "q": "During a code review, you notice a developer has injected a Scoped DbContext instance into a Singleton BackgroundService. What is the main architectural risk of this design?",
+      "options": [
+        "A compiler error because scoped services cannot be resolved in Singleton constructors.",
+        "Concurrency issues and memory growth, as DbContext is not thread-safe and the change tracker will keep all tracked entities in memory forever.",
+        "The BackgroundService will fail to start because it runs on a separate thread pool thread without HTTP context.",
+        "Database connections will leak and remain open, leading to SQL Server connection pool exhaustion in minutes."
+      ],
+      "correctIndex": 1,
+      "explanation": "`DbContext` is NOT thread-safe and is designed to be short-lived. Injecting it directly into a Singleton means the same DbContext instance is shared across all executions of the background service. If multiple threads run, it throws concurrency exceptions. Furthermore, since the DbContext lives as long as the Singleton (lifetime of the app), its Change Tracker will grow indefinitely, causing a memory leak."
+    },
+    {
+      "q": "You are designing a distributed system where Microservice A publishes a 'UserCreated' event, and Microservice B must consume it and update its database. How do you guarantee that Microservice A publishes the event only if its local database transaction commits successfully, without using distributed transactions?",
+      "options": [
+        "Publish the event inside a try/catch block. If the publish throws an exception, rollback the DB transaction.",
+        "Implement the Outbox Pattern: Save both the user data and the event payload to an Outbox table in the same local DB transaction, then process the outbox asynchronously.",
+        "Use Two-Phase Commit (2PC) protocol via MSDTC to coordinate the SQL Server database and the RabbitMQ broker.",
+        "Publish the event first. If the broker confirms receipt, commit the database transaction."
+      ],
+      "correctIndex": 1,
+      "explanation": "The Outbox Pattern ensures atomicity. By saving the event payload in an `Outbox` table in the *same* database transaction as the entity update, you guarantee that either both succeed or both fail. A background worker then reads from the Outbox table and publishes to the broker, ensuring at-least-once delivery without distributed transactions."
+    },
+    {
+      "q": "You are implementing a high-concurrency background processor in .NET that routes incoming log data to a single writer. You want to avoid thread blocking and minimize allocations. Which synchronization mechanism is best suited?",
+      "options": [
+        "BlockingCollection<T>, because it is thread-safe and implements the Producer-Consumer pattern out of the box.",
+        "System.Threading.Channels, because it is async-first, uses ValueTasks to avoid allocations, and supports configuring SingleWriter/SingleReader.",
+        "SemaphoreSlim, using Wait() and Release() inside a lock block to coordinate threads.",
+        "ConcurrentQueue<T> in a while(true) loop that sleeps for 10ms when the queue is empty."
+      ],
+      "correctIndex": 1,
+      "explanation": "`System.Threading.Channels` is designed specifically for high-throughput, async-first pipelines. Unlike `BlockingCollection` which blocks OS threads, `Channels` exposes async methods (`WriteAsync`, `ReadAllAsync`) using `ValueTask` to minimize allocations. Configuring `SingleWriter = true` enables compiler micro-optimizations."
+    },
+    {
+      "q": "Which C# 12 feature has a hidden risk of capturing mutable constructor parameters as compiler-generated fields, potentially causing side effects or memory retention?",
+      "options": [
+        "Primary Constructors on classes.",
+        "Required Properties with SetsRequiredMembers attribute.",
+        "Collection Expressions with spread operator.",
+        "Ref fields inside ref structs."
+      ],
+      "correctIndex": 0,
+      "explanation": "Primary Constructors on classes allow accessing parameters anywhere in the class body. If a parameter is referenced in a method, the compiler generates a private field to capture it. Unlike traditional constructors where you assign to `private readonly` fields, captured parameters are *mutable* and can be re-assigned, and can cause memory leaks if captured in closures."
+    },
+    {
+      "q": "You are upgrading a legacy ASP.NET Web API (.NET Framework 4.8) to .NET 9. The system must remain fully operational in production during migration. What is the recommended strategy?",
+      "options": [
+        "Big Bang Migration: Stop production, upgrade all projects to SDK-style, and deploy the entire .NET 9 codebase.",
+        "Write a converter script in PowerShell to translate MVC controllers to Minimal APIs automatically.",
+        "Strangler Fig Pattern: Place YARP in front of the legacy app, and gradually route rewritten endpoints to the new .NET 9 microservice.",
+        "Run the legacy WebForms application inside a Linux Docker container using Mono runtime."
+      ],
+      "correctIndex": 2,
+      "explanation": "The Strangler Fig Pattern allows incremental migration. By placing YARP (Yet Another Reverse Proxy) as an API Gateway, it routes traffic to the legacy app by default. As endpoints are rewritten in .NET 9, YARP is updated to route those paths to the new app. This minimizes risk and avoids outages."
+    },
+    {
+      "q": "In a microservice architecture using CQRS, how do you handle data synchronization between the write database and the read database (read model) with eventual consistency?",
+      "options": [
+        "Use distributed transactions (2PC) to write to both databases simultaneously.",
+        "Publish integration events from the write side to a message broker (e.g. RabbitMQ/Kafka) which are consumed by the read side to update its cache/store asynchronously.",
+        "Use a shared Entity Framework DbContext with two different connection strings.",
+        "Configure the SQL database to run in Read Uncommitted isolation level globally."
+      ],
+      "correctIndex": 1,
+      "explanation": "Eventual consistency in CQRS is typically achieved by publishing integration events to a message broker when the write side processes a state-changing command. A consumer on the read side receives the event and updates the read model asynchronously, decoupling write throughput from read scaling."
+    },
+    {
+      "q": "What is the primary architectural difference between a Retry Pattern and a Circuit Breaker Pattern when implementing client resiliency?",
+      "options": [
+        "Retry protects the client from memory leaks; Circuit Breaker protects the database from unauthorized queries.",
+        "Retry attempts to execute the operation again hoping a transient error resolves; Circuit Breaker detects that a downstream service is failing and immediately fails subsequent requests without calling the service, preventing resource exhaustion.",
+        "Retry is synchronous while Circuit Breaker is asynchronous.",
+        "Circuit Breaker is only used for caching, while Retry is used for databases."
+      ],
+      "correctIndex": 1,
+      "explanation": "Retry is for handling transient, self-healing errors (like network blips). Circuit Breaker is for avoiding cascading failures: it tracks failure rates and 'opens' the circuit to prevent the client from sending futile requests to an already overloaded or crashed dependency, giving it time to recover."
+    },
+    {
+      "q": "In .NET, how does Server Garbage Collection (Server GC) differ from Workstation Garbage Collection in terms of resource utilization and throughput?",
+      "options": [
+        "Server GC uses a single thread for all collection, while Workstation GC allocates a thread per CPU core.",
+        "Server GC creates one GC heap and one GC thread per logical CPU core, maximizing throughput for multi-core server applications at the cost of higher base memory usage; Workstation GC uses a single heap and thread to minimize resource usage.",
+        "Server GC is only compatible with Windows Server OS, while Workstation GC only runs on Windows 10/11.",
+        "Server GC disables Generation 2 collections to avoid stop-the-world pauses."
+      ],
+      "correctIndex": 1,
+      "explanation": "Server GC is optimized for high-throughput server workloads. It parallelizes collections across multiple threads (one per CPU core) and uses separate heaps. Workstation GC is optimized for UI responsiveness and low memory footprint on client machines."
+    },
+    {
+      "q": "In a distributed system, how does the Cache-Aside (Lazy Loading) caching strategy operate under the hood?",
+      "options": [
+        "The cache is placed between the application and the database; all database writes are intercepted by the cache first.",
+        "The application checks the cache; if a hit occurs, it returns the data. If a miss occurs, it queries the database, writes the result to the cache, and returns it to the client. Writes update the database directly.",
+        "The cache automatically queries the database on a cron schedule to keep itself updated.",
+        "The application only writes to the cache, and a background thread eventually syncs to the database."
+      ],
+      "correctIndex": 1,
+      "explanation": "Cache-Aside is the most common strategy. The application manages both the cache and the database. If cache misses, the app fetches from the DB and writes back to cache. This is simple and resilient to cache provider outages, but can lead to stale data if database updates aren't handled."
+    },
+    {
+      "q": "Why is the Backend-for-Frontend (BFF) security pattern preferred over storing JWT access tokens directly in single-page applications (SPAs)?",
+      "options": [
+        "Because JWTs cannot be parsed in modern browsers.",
+        "To protect the application from Cross-Site Scripting (XSS) attacks by keeping the sensitive JWT tokens server-side in the BFF, using secure, HttpOnly, SameSite cookies for browser-to-BFF session management.",
+        "Because BFF runs faster than JWT token generation.",
+        "BFF automatically encrypts all HTTP traffic using SSL/TLS."
+      ],
+      "correctIndex": 1,
+      "explanation": "Storing JWTs in local storage or memory in an SPA exposes them to XSS attacks (malicious scripts stealing the token). The BFF pattern handles authentication on a server-side gateway, keeps the tokens in secure server-side session state, and talks to the SPA using encrypted, HttpOnly cookies."
+    },
+    {
+      "q": "How does the Token Bucket rate limiting algorithm handle traffic spikes differently from the Fixed Window algorithm?",
+      "options": [
+        "Token Bucket blocks all requests during a spike, while Fixed Window allows them.",
+        "Token Bucket allows spikes up to the bucket capacity by accumulating tokens during idle times, whereas Fixed Window can suffer from a 'double limit' traffic burst at the window boundaries.",
+        "Fixed Window uses a sliding log that takes zero memory.",
+        "Token Bucket is only implemented client-side."
+      ],
+      "correctIndex": 1,
+      "explanation": "Token Bucket fills tokens at a constant rate up to a max capacity, enabling bursty traffic if the bucket is full. Fixed Window resets limits at fixed intervals, which allows double the rate limit within a short interval surrounding the boundary (e.g., limit of 100/min allowing 100 at 0:59 and 100 at 1:00)."
+    },
+    {
+      "q": "In Domain-Driven Design (DDD), what is the key rule regarding transactional boundaries and Aggregates?",
+      "options": [
+        "An aggregate should contain all tables of the database.",
+        "A single database transaction should only modify and commit a single Aggregate root at a time, using eventual consistency (events) to update other Aggregates.",
+        "All aggregates must be saved in the same memory cache.",
+        "Aggregates should never contain business logic, only data properties."
+      ],
+      "correctIndex": 1,
+      "explanation": "Aggregates represent consistency boundaries. To maintain high concurrency and clean boundaries, a single transaction should only update and save one aggregate instance. Updates to other aggregates should be handled asynchronously via domain events."
+    },
+    {
+      "q": "In an Event Sourced system, what is the role of an 'Upcaster' in handling schema evolution of events over time?",
+      "options": [
+        "It archives old events to long-term storage.",
+        "It translates legacy event JSON structures into the new class schemas dynamically during the read/replay process, before they reach the aggregate.",
+        "It rewrites the historical database log to replace old events with new versions.",
+        "It compiles C# classes into SQL schema migrations."
+      ],
+      "correctIndex": 1,
+      "explanation": "Event store history is immutable and cannot be edited. When the schema of an event changes (e.g. adding a property), an Upcaster intercepts old event payloads read from the database and maps/transforms them to the new schema format in memory before they are replayed."
+    },
+    {
+      "q": "What is SIMD (Single Instruction, Multiple Data) in C# and how is it used for micro-optimizations?",
+      "options": [
+        "It compiles C# to run on GPU cores using WebGL.",
+        "It uses CPU vector registers (via Vector<T> or Vector128) to perform the same mathematical operation on multiple data elements in parallel in a single CPU cycle, improving throughput of arithmetic/data processing loops.",
+        "It runs the garbage collector concurrently with the app thread.",
+        "It automatically slices large arrays into Span<T> buffers."
+      ],
+      "correctIndex": 1,
+      "explanation": "SIMD enables data-level parallelism at the hardware level. Instead of adding array elements one-by-one in a loop, .NET System.Numerics.Vector<T> performs the operations on blocks of 4, 8, or 16 numbers simultaneously, greatly boosting performance in math or search-heavy hot paths."
+    },
+    {
+      "q": "How does gRPC under HTTP/3 improve multiplexing compared to gRPC under HTTP/2?",
+      "options": [
+        "HTTP/3 uses TLS 1.2 which is faster than TLS 1.3.",
+        "HTTP/3 uses UDP-based QUIC, which resolves the TCP head-of-line blocking problem; a dropped packet on one stream does not block unrelated active streams.",
+        "HTTP/3 automatically serializes payloads using XML instead of Protobuf.",
+        "HTTP/3 does not require an active network connection."
+      ],
+      "correctIndex": 1,
+      "explanation": "HTTP/2 multiplexes streams over a single TCP connection. However, if a packet is lost, TCP pauses the entire connection (head-of-line blocking) until the packet is retransmitted, affecting all streams. HTTP/3 runs on top of QUIC (UDP), where streams are independent; packet loss on one stream does not stall the others."
+    }
+  ]
+}

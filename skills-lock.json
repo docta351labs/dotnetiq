@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "mindmap": {
+      "source": "markdown-viewer/skills",
+      "sourceType": "github",
+      "skillPath": "mindmap/SKILL.md",
+      "computedHash": "efc1dc112da9aa2abfc71458af4e744c9807682791c34a4d046262858089e43a"
+    }
+  }
+}

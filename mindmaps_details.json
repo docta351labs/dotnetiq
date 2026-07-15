@@ -1,0 +1,752 @@
+{
+  "microservice resilience": {
+    "description": "Designing systems that gracefully handle failure using transient error policies, circuit breakers, and load throttling.",
+    "tip": "Always combine retries with circuit breakers to prevent flooding a failing downstream service."
+  },
+  "retry policies": {
+    "description": "Automatically repeats a failed operation, typically with an exponential delay (backoff) and randomization (jitter) to prevent hammering the server.",
+    "tip": "Use jitter to ensure all failing requests don't retry at the exact same millisecond.",
+    "code": "policy => policy.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(new Random().Next(0, 100)))"
+  },
+  "circuit breakers": {
+    "description": "State machine that blocks requests to a repeatedly failing downstream service, preventing resource exhaustion and allowing the service to recover.",
+    "tip": "Configure failure thresholds (e.g. 50% failures in 10s) to trip the breaker dynamically.",
+    "code": "policy => policy.AdvancedCircuitBreakerAsync(\n    failureThreshold: 0.5,\n    samplingDuration: TimeSpan.FromSeconds(10),\n    minimumThroughput: 8,\n    durationOfBreak: TimeSpan.FromSeconds(30)\n)"
+  },
+  "bulkhead isolation": {
+    "description": "Limits the number of concurrent executions or resources allocated to a specific service, separating and protecting other modules from failure.",
+    "tip": "Prevents a single failing service from hogging all Kestrel/ThreadPool execution threads.",
+    "code": "policy => Policy.BulkheadAsync<HttpResponseMessage>(maxParallelization: 20, maxQueueingActions: 10)"
+  },
+  "fallbacks": {
+    "description": "Provides a degraded alternative action or default value when a call fails, preserving core usability.",
+    "tip": "Fallback data can be fetched from a local Redis cache or memory snapshot.",
+    "code": "policy => Policy<HttpResponseMessage>.Handle<Exception>().FallbackAsync(new HttpResponseMessage(HttpStatusCode.OK) {\n    Content = new StringContent(\"{ 'status': 'stale_data' }\")\n})"
+  },
+  "domain-driven design": {
+    "description": "Software design approach focusing on translating complex business domain requirements directly into coding model boundaries.",
+    "tip": "Structure your C# solution folders to mirror your aggregates and bounded contexts."
+  },
+  "aggregates": {
+    "description": "A grouping of associated objects treated as a single transactional unit, managed by an Aggregate Root.",
+    "tip": "Only reference other aggregates by their Identity (IDs), never by direct entity references."
+  },
+  "entities vs value objects": {
+    "description": "Entities have a distinct identity and lifecycle, while Value Objects are defined solely by their attributes and are immutable.",
+    "tip": "Use value objects to capture self-contained domain rules (e.g. Email address or Money format validations)."
+  },
+  "domain events": {
+    "description": "Signals representing a significant business occurrence in the domain, allowing decoupled systems to react.",
+    "tip": "Use domain events to coordinate state transitions across different aggregates asynchronously.",
+    "code": "public class OrderSubmittedEvent : INotification {\n    public Guid OrderId { get; }\n    public DateTime SubmittedAt { get; } = DateTime.UtcNow;\n}"
+  },
+  "strategic boundaries": {
+    "description": "Splitting the organization and software domains into bounded contexts, defining context maps and ubiquitous languages.",
+    "tip": "Use Bounded Contexts to isolate subdomains (like Billing, Shipping) so different teams don't conflict."
+  },
+  "distributed locking": {
+    "description": "Synchronizing operations across multiple running container instances to prevent double-processing and race conditions.",
+    "tip": "Distributed locks require an auto-expiry time (TTL) to prevent permanent deadlocks if the acquiring node crashes."
+  },
+  "lock types": {
+    "description": "Optimistic concurrency handles collision checks at save time; pessimistic locks block rows up front; distributed locks coordinate across nodes.",
+    "tip": "Use optimistic concurrency (EF RowVersion) as the default; use distributed locks (Redis) for critical operations (like payments)."
+  },
+  "redlock algorithm": {
+    "description": "A consensus lock algorithm for Redis, securing a resource by acquiring locks on multiple master nodes with a short TTL lease.",
+    "tip": "Acquires locks concurrently across multiple Redis masters; requires success on a majority of nodes.",
+    "code": "using (var redLock = await _lockFactory.CreateLockAsync(lockKey, TimeSpan.FromSeconds(10))) {\n    if (redLock.IsAcquired) { /* execute */ }\n}"
+  },
+  "db-level locks": {
+    "description": "Database engine mechanisms like SELECT FOR UPDATE or transaction table locks to block concurrent writes.",
+    "tip": "Use database locks inside tight transactions; avoid keeping locks open during external HTTP calls."
+  },
+  "deadlock mitigation": {
+    "description": "Using explicit timeouts, ordering locks uniformly, and keeping locks short to prevent execution deadlocks.",
+    "tip": "Always define a timeout when acquiring a lock; log lock timeout exceptions for diagnostics."
+  },
+  "clean architecture": {
+    "description": "Architectural structure separating business logic from frameworks, UI, and database layers using inward-facing dependencies.",
+    "tip": "Your Domain layer must contain zero NuGet dependencies on Entity Framework or third-party web components."
+  },
+  "core layers": {
+    "description": "Domain (core rules/entities) and Application (handlers/use cases) forming the core, framework-free business engine.",
+    "tip": "Application layer defines interfaces (e.g. IRepository) which are implemented in external layers."
+  },
+  "external layers": {
+    "description": "Infrastructure (database access, API clients) and Presentation (endpoints, controllers) implementing concrete details.",
+    "tip": "Use Dependency Injection in Program.cs to bind Infrastructure concretions to Core interfaces."
+  },
+  "key principles": {
+    "description": "Flow of dependencies only points inward towards the core. Classes use abstractions rather than concretions.",
+    "tip": "Enforce this boundary in your CI pipeline by checking project references."
+  },
+  "key benefits": {
+    "description": "High testability via mock interfaces, and independence from database or framework changes.",
+    "tip": "Allows migrating from SQL Server to Postgres by rewriting the Infrastructure project, leaving Core code untouched."
+  },
+  "caching strategy": {
+    "description": "Storing computed results or database rows in fast temporary memory to reduce latency and load.",
+    "tip": "Never cache highly volatile transactional data without strict invalidation rules."
+  },
+  "cache types": {
+    "description": "In-Memory cache is inside the app process (fastest); Distributed cache (Redis) is shared across scaled nodes.",
+    "tip": "In-memory cache is ideal for static metadata (e.g., countries list); Distributed cache is required for user sessions."
+  },
+  "eviction policies": {
+    "description": "Rules to remove items: Absolute Expiration (fixed lifespan) and Sliding Expiration (lifespan extended on access).",
+    "tip": "Combine sliding expiration with an absolute cap to prevent stale keys from residing in cache forever."
+  },
+  "cache patterns": {
+    "description": "Cache-Aside reads from cache first, then database on miss; Write-Through updates cache and database synchronously.",
+    "tip": "Use Cache-Aside for most general read-heavy endpoints; write-through is best for keeping write/read data closely aligned."
+  },
+  "cache stampede": {
+    "description": "When multiple requests miss cache at once, overload database. Solved using locking, GetOrAdd, or pre-warming.",
+    "tip": "Wrap database calls in SemaphoreSlim or ConcurrentDictionary with Lazy to coordinate thread requests.",
+    "code": "public async Task<Data> GetOrCreateAsync(string key) {\n    return await _cache.GetOrCreateAsync(key, async entry => {\n        entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);\n        return await FetchFromDbAsync(key);\n    });\n}"
+  },
+  "solid principles": {
+    "description": "Five guidelines to design clean software: Single Responsibility, Open/Closed, Liskov, Interface Segregation, and Dependency Inversion.",
+    "tip": "Dependency Inversion: Depend on interfaces, not implementations.",
+    "code": "// Dependency Inversion: Depend on interfaces, not implementations\npublic class CustomerService {\n    private readonly ICustomerRepository _repo;\n    public CustomerService(ICustomerRepository repo) => _repo = repo;\n}"
+  },
+  "single responsibility (srp)": {
+    "description": "A class should have only one reason to change, meaning it should focus on a single job.",
+    "tip": "If a class requires multiple logger, repository, and helper parameters, it is likely violating SRP."
+  },
+  "open/closed (ocp)": {
+    "description": "Classes should be open for extension but closed for modification, utilizing interfaces or inheritance.",
+    "tip": "Use strategy pattern or abstract classes to add new payment processors without altering original controller classes."
+  },
+  "liskov substitution (lsp)": {
+    "description": "Objects of a superclass should be replaceable with objects of its subclasses without breaking application behavior.",
+    "tip": "Avoid throwing NotImplementedException in subclasses; this is a clear sign of LSP violation."
+  },
+  "interface segregation (isp)": {
+    "description": "Clients should not be forced to depend on interfaces and methods they do not use; prefer thin interfaces.",
+    "tip": "Break down large interfaces (e.g. IRepository) into thinner, functional interfaces (e.g. IReadRepository, IWriteRepository)."
+  },
+  "dependency inversion (dip)": {
+    "description": "Depend on abstractions rather than concrete classes, decoupling modules using dependency injection.",
+    "tip": "Depend on IEmailService in your controller, rather than instantiating a SendGridEmailService directly."
+  },
+  "dependency injection": {
+    "description": "Design pattern where a class receives its dependencies from an external container instead of instantiating them itself.",
+    "tip": "ASP.NET Core has a built-in DI container supporting Constructor and Action/Parameter injection."
+  },
+  "lifetimes": {
+    "description": "Transient (new instance each call), Scoped (once per request), and Singleton (single instance for app life).",
+    "tip": "Injecting Scoped services into Singletons creates a captive dependency bug; avoid this entirely."
+  },
+  "benefits": {
+    "description": "Enables loose coupling, cleaner unit testing, and structured object lifespans.",
+    "tip": "Mocking external services during unit testing becomes trivial since you inject mocks via interfaces."
+  },
+  "usage": {
+    "description": "Injecting dependencies via constructors (most common), method parameters, or HTTP request context attributes.",
+    "tip": "Use [FromServices] on action parameters to inject services only used in a specific endpoint call.",
+    "code": "public class ProductController : ControllerBase {\n    private readonly IProductService _service;\n    public ProductController(IProductService service) => _service = service;\n}"
+  },
+  "ef core basics": {
+    "description": "Entity Framework Core is a lightweight, extensible ORM that maps C# objects to relational databases.",
+    "tip": "Configure entity relationships in OnModelCreating using Fluent API instead of attributes to keep entity classes clean."
+  },
+  "core concepts": {
+    "description": "DbContext manages database connections and change tracking; DbSet maps to specific database tables; Entities map to rows.",
+    "tip": "A DbContext is not thread-safe and must be disposed/scoped per request."
+  },
+  "database flow": {
+    "description": "Applying migrations to control table schemas, and calling SaveChanges to write pending mutations to the database.",
+    "tip": "Always generate migrations via CLI: `dotnet ef migrations add MyMigration`."
+  },
+  "querying data": {
+    "description": "Retrieving rows using LINQ expressions, loading tracked instances, or disabling tracking for optimizations.",
+    "tip": "Use AsNoTracking() when loading read-only collections to improve query execution speed.",
+    "code": "var products = await _context.Products.AsNoTracking().ToListAsync();"
+  },
+  "mvc vs web api": {
+    "description": "Comparing server-side web layouts (MVC) and RESTful API endpoints (Web API) in ASP.NET Core.",
+    "tip": "Use Web API for SPAs (React, Angular) or mobile backends; use MVC for server-side rendered websites."
+  },
+  "mvc (model-view-controller)": {
+    "description": "Renders HTML pages on the server using Model state, Controller actions, and Razor View files.",
+    "tip": "Razor View engine compiles .cshtml files into HTML on the server dynamically."
+  },
+  "web api": {
+    "description": "Exposes JSON or XML data endpoints using ControllerBase classes and ApiController attributes for modern APIs.",
+    "tip": "Always return appropriate IActionResult status codes (e.g. Ok, Created, BadRequest) to clients."
+  },
+  "commonalities": {
+    "description": "Both share the ASP.NET Core middleware request pipeline, dependency injection container, and routing systems.",
+    "tip": "You can host both MVC pages and Web API controllers inside the same ASP.NET Core application."
+  },
+  "saga pattern": {
+    "description": "Coordinates multiple local transactions across services to achieve eventual consistency. Rollbacks are managed via compensating actions.",
+    "tip": "Avoid distributed lock contention; prefer asynchronous message-driven architectures."
+  },
+  "choreography": {
+    "description": "Decentralized model. Services listen to events from other services and react accordingly without a central coordinator.",
+    "tip": "Best for simple, low-step workflows. Watch out for cyclic dependencies and hard-to-trace flows.",
+    "code": "// Event Producer publishes after local commit\npublic async Task Handle(OrderCreatedEvent ev) {\n    await _publishEndpoint.Publish(new ReserveStockCommand(ev.OrderId, ev.Items));\n}"
+  },
+  "loose coupling": {
+    "description": "Services only know about the events they consume, not about the overall business process."
+  },
+  "high event latency": {
+    "description": "Difficult to predict total processing time under heavy queues."
+  },
+  "orchestration": {
+    "description": "Centralized model. A state machine orchestrator directs the participants on what local transactions to execute.",
+    "tip": "Best for complex workflows. Provides a single source of truth for the saga status.",
+    "code": "// State Machine using MassTransit Saga\npublic class OrderSaga : MassTransitStateMachine<OrderState> {\n    public State ReservingStock { get; private set; }\n    public Event<OrderCreated> OrderCreated { get; private set; }\n\n    init {\n        During(Initial,\n            When(OrderCreated)\n                .TransitionTo(ReservingStock)\n                .Publish(context => new ReserveStock(context.Saga.CorrelationId)));\n    }\n}"
+  },
+  "centralized state": {
+    "description": "State is tracked in one place (e.g. SqlServer, Redis), simplifying tracing."
+  },
+  "saga orchestrator": {
+    "description": "Acts as a traffic cop, invoking commands and handling errors."
+  },
+  "outbox pattern": {
+    "description": "Guarantees 'At-Least-Once' delivery. Messages are stored in the same database transaction as the state mutation and published by a background processor.",
+    "tip": "Crucial for preventing database and message broker consistency mismatch.",
+    "code": "// EF Core Transaction with Outbox\nusing var transaction = await _dbContext.Database.BeginTransactionAsync();\n_dbContext.Orders.Add(order);\n_dbContext.OutboxMessages.Add(new OutboxMessage {\n    Payload = JsonSerializer.Serialize(new OrderCreatedEvent(order.Id)),\n    OccurredOn = DateTime.UtcNow\n});\nawait _dbContext.SaveChangesAsync();\nawait transaction.CommitAsync();"
+  },
+  "atomicity": {
+    "description": "Writing state and event payload to the database succeeds or fails together."
+  },
+  "background publisher": {
+    "description": "BackgroundService polls the Outbox table using SKIP LOCKED to publish messages."
+  },
+  "compensating transactions": {
+    "description": "Undoes a previously completed local transaction when subsequent steps fail. Must be idempotent.",
+    "tip": "Compensating transactions are 'semantic rollbacks' (e.g. issuing a credit refund, not reversing raw DB rows).",
+    "code": "// Compensation logic\npublic async Task RollbackPayment(PaymentFailedEvent ev) {\n    var order = await _dbContext.Orders.FindAsync(ev.OrderId);\n    order.Status = OrderStatus.CancelledByFailedPayment;\n    await _dbContext.SaveChangesAsync();\n}"
+  },
+  "backward recovery": {
+    "description": "Reverts actions in reverse order of their execution."
+  },
+  "clr memory & gc": {
+    "description": "Automates memory allocation and reclamation. Divided into generations to optimize execution speeds based on object lifespans.",
+    "tip": "Minimize Gen 2 collects and Large Object Heap (LOH) allocations to reduce Stop-the-World pauses."
+  },
+  "heap segments": {
+    "description": "Managed memory divided into Ephemeral Heaps (Gen 0, 1), Gen 2, Large Object Heap (LOH), and Pinned Object Heap (POH).",
+    "tip": "POH prevents GC from moving pinned arrays, reducing heap fragmentation."
+  },
+  "loh (>= 85k bytes)": {
+    "description": "For large objects. Not compacted by default to save CPU cycles, leading to fragmentation."
+  },
+  "poh (pinned heap)": {
+    "description": "Introduced in .NET 5. Restricts GC compaction issues for interop/buffers."
+  },
+  "gc types": {
+    "description": "Workstation GC optimizes for UI responsiveness (single thread). Server GC creates dedicated heaps/threads per logical core to optimize throughput.",
+    "tip": "Enable Server GC in production microservices to leverage parallel CPU cores.",
+    "code": "<!-- In csproj file -->\n<PropertyGroup>\n  <ServerGarbageCollection>true</ServerGarbageCollection>\n  <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>\n</PropertyGroup>"
+  },
+  "workstation gc": {
+    "description": "Runs on a single background thread. Ideal for desktop apps."
+  },
+  "server gc": {
+    "description": "One GC thread per CPU core. Highly parallel, memory intensive."
+  },
+  "diagnostics": {
+    "description": "Profiling and analyzing memory to fix production leaks, memory bloat, and CPU spikes due to high '% Time in GC'.",
+    "tip": "Use dotnet-counters for live tracking, and dotnet-dump for offline post-mortem heap analysis.",
+    "code": "# Capture a dump on Linux container\ndotnet-dump collect -p 1\n# Analyze heap allocations\ndotnet-dump analyze my_dump.dmp\n> dumpheap -stat"
+  },
+  "dotnet-counters": {
+    "description": "Live CLI monitor for GC rates, heap sizes, and CPU overhead."
+  },
+  "gcroot command": {
+    "description": "Finds the chain of references holding an object on the heap, preventing collection."
+  },
+  "gc settings": {
+    "description": "Advanced runtime configuration parameters to tune memory limits and latency strategies in containers.",
+    "tip": "Set memory hard limits to match container limits, preventing OS-level OOM kills.",
+    "code": "/* runtimeconfig.template.json */\n{\n  \"configProperties\": {\n    \"System.GC.HeapHardLimit\": 1073741824,\n    \"System.GC.LOHCompactionMode\": 1\n  }\n}"
+  },
+  "gc latency modes": {
+    "description": "Modes like LowLatency or SustainedLowLatency to delay Gen 2 collects."
+  },
+  "heap hard limit": {
+    "description": "Ensures .NET runtime respects container RAM limits."
+  },
+  "strangler fig migration": {
+    "description": "Gradually replaces monolith endpoints with modern .NET APIs. Relies on reverse proxies to mask the backend layout from users.",
+    "tip": "Never do a big-bang rewrite. Slice the domain vertically and migrate module by module."
+  },
+  "reverse proxy & yarp": {
+    "description": "Yet Another Reverse Proxy (YARP) is a highly customizable proxy built in .NET. Routes client requests to either old or new apps.",
+    "tip": "Enables seamless URL path takeover by modifying route configurations without client awareness.",
+    "code": "// Program.cs YARP config\nbuilder.Services.AddReverseProxy()\n       .LoadFromConfig(builder.Configuration.GetSection(\"ReverseProxy\"));\n// ...\napp.MapReverseProxy();"
+  },
+  "path-based routing": {
+    "description": "Routes '/api/legacy' to MVC 4.8, while '/api/newFeature' goes to .NET 9."
+  },
+  "dynamic rewriting": {
+    "description": "Modifies headers and cookies on the fly to match target formats."
+  },
+  "auth sharing": {
+    "description": "Sharing security sessions between ASP.NET forms authentication and modern JWT/Cookie tokens using Shared Data Protection Keys.",
+    "tip": "Configure modern ASP.NET Core to encrypt and decrypt cookies matching legacy forms auth schemas.",
+    "code": "// Share keys via Redis\nbuilder.Services.AddDataProtection()\n    .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect(\"redis_conn\"), \"DP-Keys\")\n    .ProtectKeysWithCertificate(\"thumbprint\");"
+  },
+  "data protection api": {
+    "description": "Configures shared cryptographic keys in Redis or Azure Blob Storage."
+  },
+  "dual authenticator": {
+    "description": "New API validates legacy cookie formats by mapping user claims."
+  },
+  "database separation": {
+    "description": "Avoiding shared database lock contention by shifting from a shared database model to modular schema boundaries.",
+    "tip": "Use temporary views or ETL synchronizers during migration, but enforce API calls for cross-domain data."
+  },
+  "shared db schema": {
+    "description": "Monolith and .NET 9 share tables. Keep transactions short to avoid deadlocks."
+  },
+  "logical extraction": {
+    "description": "Introduce separate schemas. Clean code references before splitting database files."
+  },
+  "perf types": {
+    "description": "Types designed to bypass heap allocation, reduce copying of bytes, and achieve maximum API throughput.",
+    "tip": "Use these in hot paths (JSON parsers, custom middleware, serialization, byte reading)."
+  },
+  "span<t> & readonlyspan<t>": {
+    "description": "Contiguous block of arbitrary memory. Stack-allocated ref struct representing arrays, stack memory, or unmanaged pointers.",
+    "tip": "Cannot escape the stack. Cannot be used as class fields or across async await boundaries.",
+    "code": "// Slice string without heap allocation\nstring rawData = \"ORDER_ID:99403\";\nReadOnlySpan<char> span = rawData.AsSpan();\nReadOnlySpan<char> idSpan = span.Slice(9); // Points to \"99403\" direct in memory"
+  },
+  "ref struct": {
+    "description": "Forced stack allocation. Prevents object heap promotion."
+  },
+  "slicing": {
+    "description": "Sub-referencing arrays or strings in constant time O(1) without allocations."
+  },
+  "memory<t>": {
+    "description": "Heap-allocatable representation of contiguous memory. Can be used inside classes, tasks, and across await statements.",
+    "tip": "Use Memory<T> when memory slices need to persist across async method states.",
+    "code": "public async Task ProcessDataAsync(ReadOnlyMemory<byte> data) {\n    await Task.Delay(10);\n    byte first = data.Span[0]; // Access Span safely during execution\n}"
+  },
+  "async friendly": {
+    "description": "Bypasses ref struct limitations. Storable in heap async state machines."
+  },
+  "t.span property": {
+    "description": "Obtains temporary Span<T> wrapper for rapid index operations."
+  },
+  "valuetask<t>": {
+    "description": "Struct-based alternative to Task<T>. Eliminates heap allocation when an async method completes synchronously.",
+    "tip": "Do not double-await a ValueTask. Convert to Task using .AsTask() if multi-awaited.",
+    "code": "// Returns cached value instantly without allocating Task object\npublic ValueTask<int> GetCachedValueAsync(string key) {\n    if (_cache.TryGetValue(key, out int value))\n        return new ValueTask<int>(value);\n    return new ValueTask<int>(FetchFromDbAsync(key));\n}"
+  },
+  "zero allocation": {
+    "description": "Saves a Gen 0 class allocation when tasks complete synchronously."
+  },
+  "task conversion": {
+    "description": "Use .AsTask() to integrate with Task.WhenAll or Task.WhenAny."
+  },
+  "native aot": {
+    "description": "Ahead-of-Time compilation compiling C# into CPU machine code, removing the need for a JIT compiler.",
+    "tip": "Requires zero reflection in serialized objects; rely on source generators.",
+    "code": "<!-- Enable in .csproj -->\n<PropertyGroup>\n  <PublishAot>true</PublishAot>\n</PropertyGroup>"
+  },
+  "instant startup": {
+    "description": "Bypasses JIT compilation phase. Ideal for Serverless and microservices."
+  },
+  "trimming engine": {
+    "description": "Tree-shakes unused assembly code, reducing size and memory footprint."
+  },
+  "cqrs & es": {
+    "description": "Decouples data write paths from read queries, representing system state as an append-only stream of historical events.",
+    "tip": "Ensure Event handlers are idempotent to handle message duplication."
+  },
+  "cqrs segregation": {
+    "description": "Splits mutations (Commands) from read operations (Queries). Different database technologies can optimize both paths.",
+    "tip": "Implement Commands via MediatR + EF Core, and Queries via raw Dapper read replicas.",
+    "code": "// Query handler using Dapper\npublic async Task<OrderDto> Handle(GetOrderQuery q) {\n    using var conn = new SqlConnection(_readDbConn);\n    return await conn.QuerySingleAsync<OrderDto>(\n        \"SELECT Id, Total FROM ReadOrders WHERE Id = @Id\", new { q.Id });\n}"
+  },
+  "command model": {
+    "description": "Highly consistent write path. Enforces business rules and validation."
+  },
+  "query model": {
+    "description": "Denormalized read path optimized for fast API responses."
+  },
+  "event sourcing": {
+    "description": "Saves application state changes as an immutable sequence of events. State is rebuilt by reading and replaying events.",
+    "tip": "Allows historic system audits and auditing at any point in time.",
+    "code": "// Apply event locally to mutate state\npublic void Apply(OrderCreated ev) {\n    this.Id = ev.OrderId;\n    this.Status = OrderStatus.Created;\n}"
+  },
+  "append-only store": {
+    "description": "Event stream is immutable. No UPDATE or DELETE allowed."
+  },
+  "state reconstitution": {
+    "description": "Reads the stream for an Aggregate ID and calls Apply() sequentially."
+  },
+  "snapshots": {
+    "description": "Saves state of the aggregate at version N. Speeds up loading by bypassing the replay of thousands of old events.",
+    "tip": "Create snapshots every 50 or 100 events to maintain optimal load speeds."
+  },
+  "version storing": {
+    "description": "Snapshots record the exact event version they represent."
+  },
+  "replay shortener": {
+    "description": "Loads snapshot, then replays only events occurring after that version."
+  },
+  "multi-tenancy": {
+    "description": "Serving multiple customer accounts (tenants) from a single deployment while ensuring complete data isolation.",
+    "tip": "Physical database separation provides the highest isolation and simplest data migration."
+  },
+  "isolation levels": {
+    "description": "Three major models: Logical separation (shared DB, shared schema), Schema separation, and Database separation.",
+    "tip": "Logical separation is cheapest; Separate Database separation is safest and complies with privacy rules."
+  },
+  "shared db (logical filter)": {
+    "description": "TenantId column on tables. Highly prone to cross-tenant leak bugs."
+  },
+  "separate db (physical)": {
+    "description": "Each tenant has its own connection string and database files."
+  },
+  "tenant provider": {
+    "description": "A scoped service resolving the current Tenant ID from HTTP Request context (subdomains, headers, or JWT claims).",
+    "tip": "Implement early in the request pipeline using custom ASP.NET Core Middleware.",
+    "code": "// Scoped tenant provider C#\npublic class TenantProvider : ITenantProvider {\n    private readonly HttpContext _context;\n    public TenantProvider(IHttpContextAccessor accessor) {\n        _context = accessor.HttpContext;\n    }\n    public string GetTenantId() => \n        _context?.User?.FindFirstValue(\"tenant_id\") ?? \"default\";\n}"
+  },
+  "middleware resolution": {
+    "description": "Inspects host names (tenant1.app.com) or custom HTTP headers."
+  },
+  "jwt claim mapping": {
+    "description": "Extracts validated tenant identifiers from the caller's auth token."
+  },
+  "ef core query filters": {
+    "description": "Applies filters globally to ensure queries automatically append TenantId checks behind the scenes.",
+    "tip": "Use IgnoreQueryFilters() only for admin tools requiring cross-tenant operations.",
+    "code": "// Apply query filter in EF Core\nprotected override void OnModelCreating(ModelBuilder builder) {\n    builder.Entity<TenantData>()\n           .HasQueryFilter(x => x.TenantId == _tenantProvider.GetTenantId());\n}"
+  },
+  "global query filters": {
+    "description": "EF Core automatically appends 'AND TenantId = @TenantId' to SQL."
+  },
+  "dynamic dbcontext": {
+    "description": "Retrieves connection strings dynamically in OnConfiguring based on current Tenant."
+  },
+  "async & concurrency": {
+    "description": "Managing asynchronous workflows and multiple threads of execution. Prevents UI freezes and boosts web server scalability.",
+    "tip": "Always pass CancellationTokens to async actions to allow graceful task termination."
+  },
+  "task parallel library": {
+    "description": "High-level abstractions built on top of the thread pool. Manages Task execution, completion states, and worker threads.",
+    "tip": "Use Task.Run for CPU-bound tasks, but never for I/O-bound tasks to prevent thread pool exhaustion.",
+    "code": "// Task.WhenAll executes in parallel\nvar tasks = urls.Select(url => _client.GetStringAsync(url));\nstring[] results = await Task.WhenAll(tasks);"
+  },
+  "task.whenall": {
+    "description": "Awaits parallel execution of multiple tasks. Fails fast if any task throws."
+  },
+  "thread pool": {
+    "description": "Manages queueing tasks and scheduling them across CPU threads."
+  },
+  "synchronization": {
+    "description": "Protects critical code sections from race conditions. Limits concurrent access to shared variables.",
+    "tip": "Do not use locks around await statements; use SemaphoreSlim instead.",
+    "code": "// SemaphoreSlim for async synchronization\nprivate static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);\n\npublic async Task AccessResourceAsync() {\n    await _semaphore.WaitAsync();\n    try { /* Critical Section across await */ }\n    finally { _semaphore.Release(); }\n}"
+  },
+  "semaphoreslim": {
+    "description": "Lightweight, async-compatible lock allowing specified max concurrency."
+  },
+  "interlocked operations": {
+    "description": "Atomic thread-safe variable updates (Add, Increment) without locking."
+  },
+  "best practices": {
+    "description": "Rules to write clean, deadlock-free asynchronous code in modern .NET apps.",
+    "tip": "Avoid calling .Result or .Wait() on Tasks. This causes thread pool blocks and deadlocks.",
+    "code": "// ConfigureAwait(false) prevents deadlock in legacy synchronization contexts\nawait FetchDataAsync().ConfigureAwait(false);"
+  },
+  "avoid async void": {
+    "description": "Exceptions in async void cannot be caught by callers and crash the process."
+  },
+  "configure async context": {
+    "description": "Discard UI synchronization context using ConfigureAwait(false) in libraries."
+  },
+  "ef core tuning": {
+    "description": "Understanding EF Core translation and execution steps to optimize database performance.",
+    "tip": "Always monitor generated SQL using Entity Framework logging or SQL Profiler."
+  },
+  "query optimization": {
+    "description": "Tuning LINQ translations to reduce data sizes fetched over the network and minimize database work.",
+    "tip": "Use AsNoTracking for read-only APIs to bypass state tracking overhead.",
+    "code": "// Optimized read-only projection query\nvar users = await _dbContext.Users\n    .AsNoTracking()\n    .Where(u => u.IsActive)\n    .Select(u => new UserDto { Id = u.Id, Name = u.Name })\n    .ToListAsync();"
+  },
+  "asnotracking": {
+    "description": "Bypasses tracking memory caches, yielding faster queries."
+  },
+  "projection (select)": {
+    "description": "Queries only the columns defined in the select mapping."
+  },
+  "loading strategies": {
+    "description": "Configuring how related entities are loaded: Eager, Explicit, or Lazy loading.",
+    "tip": "Prefer Eager Loading with projections or split queries to avoid N+1 query execution issues.",
+    "code": "// Eager Loading with Split Queries\nvar orders = await _dbContext.Orders\n    .Include(o => o.Items)\n    .AsSplitQuery() // Resolves cartesian explosion\n    .ToListAsync();"
+  },
+  "cartesian explosion": {
+    "description": "Occurs when loading multiple collections in a single SQL query."
+  },
+  "dbcontext pooling": {
+    "description": "Reuses DbContext instances from a pool to avoid allocation overhead."
+  },
+  "web api perf": {
+    "description": "Optimizing HTTP endpoint response times, CPU cycles, and payload sizing in ASP.NET Core.",
+    "tip": "Implement Output Caching to cache entire HTTP responses on the server."
+  },
+  "caching & compression": {
+    "description": "Reducing server workload and download times by caching data and compressing HTTP payloads.",
+    "tip": "Use Brotli compression for smaller payload sizes compared to traditional Gzip.",
+    "code": "// Program.cs Output Cache\nbuilder.Services.AddOutputCache();\n// ...\napp.MapGet(\"/weather\", () => \"data\").CacheOutput();"
+  },
+  "response caching": {
+    "description": "Client-side and proxy caching headers configured by the server."
+  },
+  "brotli compression": {
+    "description": "Highly efficient compression middleware for text-based payloads."
+  },
+  "pipeline middleware": {
+    "description": "Customizing request processing steps using the ASP.NET Core middleware pipeline.",
+    "tip": "Keep middleware lightweight; do not run block-level I/O operations inside request paths.",
+    "code": "// Custom Exception Middleware\npublic async Task InvokeAsync(HttpContext context) {\n    try { await _next(context); }\n    catch (Exception ex) { await HandleExceptionAsync(context, ex); }\n}"
+  },
+  "request lifecycle": {
+    "description": "Sequential execution path of registered middleware components."
+  },
+  "global error handling": {
+    "description": "Intercepts unhandled exceptions to return structured Problem Details."
+  },
+  "design patterns": {
+    "description": "Applying decoupled design principles and pattern frameworks to write extensible, testable C# code.",
+    "tip": "Do not inject Scoped services into Singleton services; this causes memory leaks and concurrency bugs."
+  },
+  "di lifetimes": {
+    "description": "Understanding service lifetimes: Transient (always new), Scoped (once per request), and Singleton (one instance).",
+    "tip": "Singleton is ideal for stateless utilities or caches; Scoped is perfect for database contexts.",
+    "code": "// Registering services with lifetimes\nbuilder.Services.AddTransient<IEmailService, EmailService>();\nbuilder.Services.AddScoped<IUserRepository, UserRepository>();\nbuilder.Services.AddSingleton<ICacheService, CacheService>();"
+  },
+  "captive dependencies": {
+    "description": "When a longer-lived service references a shorter-lived service."
+  },
+  "scope validation": {
+    "description": "Enabled by default in development to catch invalid lifecycle bindings."
+  },
+  "patterns": {
+    "description": "Standard design patterns to write cleaner code.",
+    "tip": "Use the Decorator pattern to add cross-cutting concerns (logging, caching) without modifying core classes.",
+    "code": "// Decorator pattern in C#\npublic class LoggingRepository : IRepository {\n    private readonly IRepository _inner;\n    public LoggingRepository(IRepository inner) => _inner = inner;\n    public async Task Save() {\n        Console.WriteLine(\"Saving...\");\n        await _inner.Save();\n    }\n}"
+  },
+  "repository & uow": {
+    "description": "Decouples domain logic from database access mechanisms."
+  },
+  "options pattern": {
+    "description": "Type-safe bind of configuration sections using IOptionsSnapshot."
+  },
+  "security & auth": {
+    "description": "Enforces authentication (identity validation) and authorization (access control) across APIs.",
+    "tip": "Always sign JWT tokens with strong keys and validate expiration dates."
+  },
+  "jwt authentication": {
+    "description": "Token-based, stateless authorization. Clients send tokens in the Authorization header.",
+    "tip": "Do not store sensitive credentials in JWT payloads; keep claim payloads lightweight.",
+    "code": "// JWT Bearer config in API\nbuilder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)\n       .AddJwtBearer(opt => {\n           opt.TokenValidationParameters = new TokenValidationParameters {\n               ValidateIssuer = true, ValidateAudience = true\n           };\n       });"
+  },
+  "claims mapping": {
+    "description": "User permissions and identifiers stored inside the JWT token."
+  },
+  "refresh tokens": {
+    "description": "Secure, short-lived API access tokens paired with long-lived refresh tokens."
+  },
+  "authorization policies": {
+    "description": "Fine-grained access control using dynamic requirement evaluations in ASP.NET Core.",
+    "tip": "Use policy-based authorization rather than role-based checks for easier maintainability.",
+    "code": "// Policy requirement mapping\nbuilder.Services.AddAuthorization(options => {\n    options.AddPolicy(\"MinimumAge\", policy =>\n        policy.Requirements.Add(new AgeRequirement(18)));\n});"
+  },
+  "policy-based auth": {
+    "description": "Combines claims, roles, and logical checks to grant access."
+  },
+  "custom handler": {
+    "description": "Executes C# code dynamically to validate request access."
+  },
+  "testing & qa": {
+    "description": "Validating functional correctness, verifying integration pipelines, and measuring API speeds.",
+    "tip": "Write unit tests targeting business logic, and integration tests for database/API paths."
+  },
+  "unit testing": {
+    "description": "Testing single methods or components in isolation by mocking external dependencies.",
+    "tip": "Use NSubstitute or Moq to create test doubles for interface dependencies.",
+    "code": "// Unit test using xUnit + NSubstitute\n[Fact]\npublic async Task CreateUser_ShouldCallSave() {\n    var repo = Substitute.For<IUserRepository>();\n    var svc = new UserService(repo);\n    await svc.RegisterUser(new User { Name = \"Jane\" });\n    await repo.Received(1).SaveAsync(Arg.Any<User>());\n}"
+  },
+  "mocking interfaces": {
+    "description": "Simulating external responses to verify code paths."
+  },
+  "xunit framework": {
+    "description": "Extensible C# test runner supporting parallel execution."
+  },
+  "integration testing": {
+    "description": "Verifies the application runs correctly as a whole, database, configuration, and middleware included.",
+    "tip": "Use WebApplicationFactory to spin up an in-memory test instance of your ASP.NET Core API.",
+    "code": "// Integration test with WebApplicationFactory\npublic class ApiTest : IClassFixture<WebApplicationFactory<Program>> {\n    private readonly HttpClient _client;\n    public ApiTest(WebApplicationFactory<Program> factory) =>\n        _client = factory.CreateClient();\n}"
+  },
+  "in-memory test host": {
+    "description": "Starts a test server in memory without network port mapping."
+  },
+  "testcontainers": {
+    "description": "Launches real database dependencies inside transient Docker containers."
+  },
+  "c# memory basics": {
+    "description": "How .NET allocates, handles, and clean up variables during execution.",
+    "tip": "Understanding where variables are stored is key to writing memory-efficient C# code."
+  },
+  "value vs reference": {
+    "description": "Value types (structs, primitive types) store values directly. Reference types (classes, strings) store a pointer to their heap memory address.",
+    "tip": "Value types are copied by value; Reference types copy the address reference.",
+    "code": "// Value type vs Reference type\nint a = 10; // Value type on Stack\nUser user = new User(); // Reference type on Heap\nUser reference = user; // Copies pointer address"
+  },
+  "value types": {
+    "description": "Allocated on the stack. Auto-disposed when scope completes."
+  },
+  "reference types": {
+    "description": "Allocated on the heap. Cleaned up by the Garbage Collector."
+  },
+  "string performance": {
+    "description": "Strings are immutable. Modifying a string allocates a new string object on the heap.",
+    "tip": "Use StringBuilder for string operations inside loops to avoid heap allocations.",
+    "code": "// StringBuilder optimization\nvar sb = new StringBuilder();\nfor(int i=0; i<100; i++) {\n    sb.Append(i);\n}\nstring result = sb.ToString();"
+  },
+  "string interning": {
+    "description": "Optimization where unique strings are stored in a single table."
+  },
+  "boxing & unboxing": {
+    "description": "Boxing converts a value type to a reference type, allocating a heap wrapper. Unboxing extracts it.",
+    "tip": "Use Generics to avoid boxing when working with lists and collections.",
+    "code": "// Boxing cost\nint num = 123;\nobject boxed = num; // Boxes int on Heap (Costly)\nint unboxed = (int)boxed; // Unboxes back to Stack"
+  },
+  "generics benefit": {
+    "description": "List<T> works directly with value types, avoiding boxing."
+  },
+  "oop & solid": {
+    "description": "Principles and structures to write clean, reusable, and maintainable C# applications.",
+    "tip": "Write code that is easy to extend but hard to break."
+  },
+  "oop pillars": {
+    "description": "Four core concepts: Encapsulation, Abstraction, Inheritance, and Polymorphism.",
+    "tip": "Use access modifiers (private, protected) to enforce encapsulation.",
+    "code": "// Polymorphism in action\npublic abstract class Animal { public abstract void MakeSound(); }\npublic class Dog : Animal { public override void MakeSound() => Console.WriteLine(\"Bark\"); }"
+  },
+  "encapsulation": {
+    "description": "Hides object internal state and exposes behavior."
+  },
+  "polymorphism": {
+    "description": "Allows derived classes to override base class methods."
+  },
+  "single responsibility": {
+    "description": "A class should have only one reason to change."
+  },
+  "interface segregation": {
+    "description": "Keep interfaces small; do not force clients to implement unused methods."
+  },
+  "linq & collections": {
+    "description": "Allows querying and manipulating in-memory or database data using standard C# methods.",
+    "tip": "Avoid calling ToList() early in queries to prevent executing queries before filtering."
+  },
+  "deferred execution": {
+    "description": "LINQ queries are not evaluated until the query results are enumerated (e.g. in a foreach loop).",
+    "tip": "Use Where and Select filters before calling ToList() to execute them on the database, not in memory.",
+    "code": "// Deferred Execution\nvar query = _dbContext.Products.Where(p => p.Price > 50);\n// Query only executes when we call ToListAsync()\nvar list = await query.ToListAsync();"
+  },
+  "ienumerable": {
+    "description": "Ideal for in-memory queries. Filters data on the client side."
+  },
+  "iqueryable": {
+    "description": "Ideal for databases. Translates LINQ queries directly into SQL."
+  },
+  "collection types": {
+    "description": "Choosing the correct collection type based on search and insertion performance.",
+    "tip": "Use Dictionary for fast O(1) lookups by key.",
+    "code": "// Dictionary lookup\nvar dict = new Dictionary<int, string>();\ndict.Add(1, \"Active\");\nstring status = dict[1]; // Fast O(1) retrieval"
+  },
+  "list<t>": {
+    "description": "Contiguous array collection. Fast index lookups but slow insertions."
+  },
+  "hashset<t>": {
+    "description": "Unordered collection of unique items. Fast searches."
+  },
+  "exceptions & debug": {
+    "description": "Managing errors gracefully in application runtime and identifying issues during development.",
+    "tip": "Use 'throw;' instead of 'throw ex;' to preserve stack trace details."
+  },
+  "exception handling": {
+    "description": "Handling unexpected errors using try-catch blocks. Prevents application crashes.",
+    "tip": "Catch specific exceptions first (e.g., FileNotFoundException) before catching general Exception.",
+    "code": "// Correct stack trace propagation\ntry {\n    ProcessPayment();\n} catch (PaymentException ex) {\n    _logger.LogError(ex, \"Payment failed\");\n    throw; // Preserves original stack trace\n}"
+  },
+  "finally block": {
+    "description": "Code block that always executes, ideal for closing files and DB connections."
+  },
+  "custom exceptions": {
+    "description": "Classes inheriting from Exception to represent specific domain errors."
+  },
+  "debugging tools": {
+    "description": "Inspecting application states and executing commands at breakpoints.",
+    "tip": "Use the Immediate Window in Visual Studio to evaluate variables and run code while paused."
+  },
+  "breakpoints": {
+    "description": "Pauses execution at a specific line to inspect variables."
+  },
+  "watch windows": {
+    "description": "Monitors the value of variables and expressions dynamically."
+  },
+  "rest api basics": {
+    "description": "Exposing Web API endpoints using standard HTTP principles.",
+    "tip": "Return correct HTTP status codes to help clients handle responses properly."
+  },
+  "http protocol": {
+    "description": "Using standard HTTP methods to represent Create, Read, Update, and Delete (CRUD) actions.",
+    "tip": "Use GET for safe read queries; POST for creation; PUT for updates; DELETE for removals.",
+    "code": "// REST Endpoint routing in ASP.NET Core\n[HttpGet(\"users/{id}\")]\npublic IActionResult GetUser(int id) {\n    var user = _svc.Find(id);\n    if (user == null) return NotFound(); // 404 Status\n    return Ok(user); // 200 Status\n}"
+  },
+  "query vs route param": {
+    "description": "Route params (/users/5) identify resources; Query params (/users?active=true) filter lists."
+  },
+  "http status codes": {
+    "description": "201 Created, 204 No Content, 400 Bad Request, 401 Unauthorized."
+  },
+  "json handling": {
+    "description": "Serializing C# objects to JSON payloads and deserializing JSON payloads back to C# classes.",
+    "tip": "Use System.Text.Json (built-in) for faster performance compared to NewtonSoft.Json."
+  },
+  "model binding": {
+    "description": "Mapping incoming HTTP request payloads directly to C# parameters."
+  },
+  "camelcase naming": {
+    "description": "Standard naming convention for JSON APIs in ASP.NET Core."
+  },
+  "git basics": {
+    "description": "Managing code changes and collaborating with other developers.",
+    "tip": "Write clear, descriptive commit messages to keep a clean project history."
+  },
+  "commit flow": {
+    "description": "Staging and committing local code changes.",
+    "tip": "Use git diff to verify changes before staging and committing.",
+    "code": "# Standard git commit sequence\ngit add .\ngit commit -m \"feat: add interactive mindmaps tab\"\ngit push origin main"
+  },
+  "staging area": {
+    "description": "Prepares specific file modifications for the next commit."
+  },
+  "local vs remote repository": {
+    "description": "Commits are saved locally until pushed to the remote repository (e.g. GitHub)."
+  },
+  "branching & merging": {
+    "description": "Creating isolated environments to build features and merging them back into the main branch.",
+    "tip": "Create feature branches instead of committing directly to the main branch."
+  },
+  "merge conflict": {
+    "description": "Occurs when two commits modify the same lines of code. Resolved manually."
+  },
+  "pull requests": {
+    "description": "Requesting team approval before merging code into production."
+  }
+}

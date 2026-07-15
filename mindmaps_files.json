@@ -1,0 +1,143 @@
+{
+  "principal": [
+    {
+      "id": "saga-patterns",
+      "file": "mindmaps/principal/saga_patterns.md",
+      "title": "Saga Pattern & Distributed Consistency"
+    },
+    {
+      "id": "memory-gc",
+      "file": "mindmaps/principal/memory_gc.md",
+      "title": "Advanced Memory & Garbage Collection"
+    },
+    {
+      "id": "strangler-pattern",
+      "file": "mindmaps/principal/strangler_pattern.md",
+      "title": "Strangler Fig: Monolith to .NET 9 Migration"
+    },
+    {
+      "id": "high-perf-types",
+      "file": "mindmaps/principal/high_perf_types.md",
+      "title": "High-Performance .NET Types"
+    },
+    {
+      "id": "cqrs-eventsourcing",
+      "file": "mindmaps/principal/cqrs_eventsourcing.md",
+      "title": "CQRS & Event Sourcing Architecture"
+    },
+    {
+      "id": "multitenancy-isolation",
+      "file": "mindmaps/principal/multitenancy_isolation.md",
+      "title": "Multi-Tenancy Isolation Architectures"
+    },
+    {
+      "id": "microservice-resilience",
+      "file": "mindmaps/principal/microservice_resilience.md",
+      "title": "Microservice Resilience & Polly Policies"
+    },
+    {
+      "id": "domain-driven-design",
+      "file": "mindmaps/principal/domain_driven_design.md",
+      "title": "Domain-Driven Design (DDD) Aggregates & Boundaries"
+    },
+    {
+      "id": "distributed-lock",
+      "file": "mindmaps/principal/distributed_lock.md",
+      "title": "Distributed Locking & Concurrency Control"
+    }
+  ],
+  "senior": [
+    {
+      "id": "async-concurrency",
+      "file": "mindmaps/senior/async_concurrency.md",
+      "title": "Asynchronous Programming & Concurrency"
+    },
+    {
+      "id": "efcore-tuning",
+      "file": "mindmaps/senior/efcore_tuning.md",
+      "title": "EF Core Query & Performance Tuning"
+    },
+    {
+      "id": "webapi-perf",
+      "file": "mindmaps/senior/webapi_perf.md",
+      "title": "Web API Performance & Middleware"
+    },
+    {
+      "id": "design-patterns",
+      "file": "mindmaps/senior/design_patterns.md",
+      "title": "C# Design Patterns & Dependency Injection"
+    },
+    {
+      "id": "senior-security",
+      "file": "mindmaps/senior/senior_security.md",
+      "title": "Security, Authentication & Authorization"
+    },
+    {
+      "id": "senior-testing",
+      "file": "mindmaps/senior/senior_testing.md",
+      "title": "Testing Frameworks & Methodologies"
+    },
+    {
+      "id": "clean-architecture",
+      "file": "mindmaps/senior/clean_architecture.md",
+      "title": "Clean Architecture & Decoupled Layers"
+    },
+    {
+      "id": "cloud-caching",
+      "file": "mindmaps/senior/cloud_caching.md",
+      "title": "In-Memory & Distributed Caching Strategy"
+    },
+    {
+      "id": "solid-principles",
+      "file": "mindmaps/senior/solid_principles.md",
+      "title": "SOLID Principles in C# Design"
+    }
+  ],
+  "semisenior": [
+    {
+      "id": "memory-types",
+      "file": "mindmaps/semisenior/memory_types.md",
+      "title": "C# Memory & Types"
+    },
+    {
+      "id": "oop-solid",
+      "file": "mindmaps/semisenior/oop_solid.md",
+      "title": "OOP Pillars & SOLID Principles"
+    },
+    {
+      "id": "linq-collections",
+      "file": "mindmaps/semisenior/linq_collections.md",
+      "title": "LINQ & Collections Framework"
+    },
+    {
+      "id": "exception-debugging",
+      "file": "mindmaps/semisenior/exception_debugging.md",
+      "title": "Exception Handling & Debugging"
+    },
+    {
+      "id": "rest-api-core",
+      "file": "mindmaps/semisenior/rest_api_core.md",
+      "title": "REST API Core Concepts"
+    },
+    {
+      "id": "git-version-control",
+      "file": "mindmaps/semisenior/git_version_control.md",
+      "title": "Git Version Control"
+    },
+    {
+      "id": "dependency-injection-basics",
+      "file": "mindmaps/semisenior/dependency_injection_basics.md",
+      "title": "Dependency Injection Basics"
+    },
+    {
+      "id": "entity-framework-basics",
+      "file": "mindmaps/semisenior/entity_framework_basics.md",
+      "title": "Entity Framework Core Basics"
+    },
+    {
+      "id": "aspnet-core-mvc-webapi",
+      "file": "mindmaps/semisenior/aspnet_core_mvc_webapi.md",
+      "title": "ASP.NET Core MVC vs Web API"
+    }
+  ]
+}
