@@ -211,6 +211,44 @@ body {
   transition: var(--transition);
 }
 
+.dev-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  margin-top: 4px;
+  transition: var(--transition);
+}
+
+.dev-row:hover {
+  color: var(--violet);
+}
+
+.dev-row i, .dev-row svg {
+  width: 14px;
+  height: 14px;
+  transition: var(--transition);
+}
+
+.dev-row img {
+  width: 14px !important;
+  height: 14px !important;
+  object-fit: contain !important;
+  transition: var(--transition);
+  border-radius: 2px;
+}
+
+.dev-row:hover i, .dev-row:hover svg {
+  color: var(--violet);
+}
+
+.dev-row:hover img {
+  transform: scale(1.15);
+}
+
 /* Main Content Area */
 .app-main {
   flex-grow: 1;
