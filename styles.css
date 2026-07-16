@@ -211,6 +211,19 @@ body {
   transition: var(--transition);
 }
 
+.developer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.developer-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
 .dev-row {
   display: flex;
   align-items: center;
@@ -219,7 +232,6 @@ body {
   font-weight: 600;
   color: var(--text-secondary);
   text-decoration: none;
-  margin-top: 4px;
   transition: var(--transition);
 }
 
