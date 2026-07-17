@@ -206,6 +206,39 @@ window.addEventListener('DOMContentLoaded', async () => {
   
   // Initialize global stats
   updateGlobalStats();
+
+  // Setup mobile navigation toggle
+  const navToggle = document.querySelector('.mobile-nav-toggle');
+  const sidebar = document.querySelector('.app-sidebar');
+  if (navToggle && sidebar) {
+    navToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = sidebar.classList.toggle('open');
+      navToggle.setAttribute('aria-expanded', isOpen);
+      const icon = navToggle.querySelector('i');
+      if (icon) {
+        if (isOpen) {
+          icon.setAttribute('data-lucide', 'x');
+        } else {
+          icon.setAttribute('data-lucide', 'menu');
+        }
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+
+    // Close sidebar if user clicks outside of it on mobile
+    document.addEventListener('click', (e) => {
+      if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !navToggle.contains(e.target)) {
+        sidebar.classList.remove('open');
+        navToggle.setAttribute('aria-expanded', 'false');
+        const icon = navToggle.querySelector('i');
+        if (icon) {
+          icon.setAttribute('data-lucide', 'menu');
+          if (window.lucide) window.lucide.createIcons();
+        }
+      }
+    });
+  }
 });
 
 // Load state from LocalStorage (level-aware)
@@ -235,6 +268,21 @@ function saveProgress() {
 
 // Switch between tabs
 function switchTab(tabId) {
+  // Close sidebar on mobile when navigating
+  const sidebar = document.querySelector('.app-sidebar');
+  const navToggle = document.querySelector('.mobile-nav-toggle');
+  if (sidebar && sidebar.classList.contains('open')) {
+    sidebar.classList.remove('open');
+    if (navToggle) {
+      navToggle.setAttribute('aria-expanded', 'false');
+      const icon = navToggle.querySelector('i');
+      if (icon) {
+        icon.setAttribute('data-lucide', 'menu');
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }
+  }
+
   // Update nav buttons
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.classList.remove('active');

@@ -1204,21 +1204,324 @@ body {
   }
 }
 
+/* Mobile Navigation Button (Hidden by default on Desktop) */
+.mobile-nav-toggle {
+  display: none;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  z-index: 15;
+  transition: var(--transition);
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+
+.mobile-nav-toggle:hover {
+  background-color: var(--bg-hover);
+}
+
+.mobile-nav-toggle i {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
 @media (max-width: 768px) {
-  .app-header {
-    padding: 0 20px;
-  }
-  .tab-content {
-    padding: 20px;
-  }
-  .quiz-card-wrapper {
+  /* Override the 1024px collapsed sidebar for mobile overlay */
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    height: 100vh;
     padding: 24px;
+    align-items: stretch;
+    transform: translateX(-100%);
+    background-color: rgba(10, 8, 19, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 100;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+    border-right: 1px solid var(--border-color);
   }
+
+  .app-sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Show labels in sidebar when it is an overlay */
+  .app-sidebar .logo-text, 
+  .app-sidebar .nav-btn span, 
+  .app-sidebar .sidebar-footer {
+    display: block !important;
+  }
+
+  .app-sidebar .logo-icon {
+    margin-bottom: 0;
+  }
+
+  .app-sidebar .nav-btn {
+    justify-content: flex-start;
+    padding: 12px 16px;
+  }
+
+  .mobile-nav-toggle {
+    display: flex;
+  }
+
+  /* Main layout */
+  .app-container {
+    flex-direction: row;
+  }
+
+  .app-main {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .app-header {
+    padding: 0 16px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-welcome {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .header-welcome h2 {
+    font-size: 1.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+
+  .header-welcome p {
+    display: none !important;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+  }
+
+  .level-label {
+    display: none !important;
+  }
+
+  .tab-content {
+    padding: 16px;
+    height: calc(100vh - 70px);
+  }
+
+  /* Stats grid */
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .stat-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .stat-details .stat-number {
+    font-size: 1.6rem;
+  }
+
+  /* Domains grid */
+  .domains-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Study layout: horizontal topics toolbar */
+  .study-layout {
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .study-sidebar {
+    width: 100%;
+    height: auto;
+    max-height: none;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    background: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  .study-sidebar h3 {
+    display: none !important;
+  }
+
+  .study-topics-list {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0 4px 8px 4px;
+    gap: 8px;
+    scrollbar-width: none;
+  }
+
+  .study-topics-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .topic-btn {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    border: 1px solid var(--border-color);
+  }
+
+  .topic-btn .topic-progress-badge {
+    font-size: 0.75rem;
+    margin-left: 6px;
+  }
+
+  .study-panel {
+    flex-grow: 1;
+    overflow: hidden;
+  }
+
+  .study-header {
+    padding: 16px;
+    margin-bottom: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .study-header .btn {
+    width: 100%;
+  }
+
+  .topic-info h2 {
+    font-size: 1.25rem;
+  }
+
+  .questions-list {
+    padding-right: 0;
+  }
+
+  .question-trigger {
+    padding: 16px;
+    font-size: 1rem;
+    gap: 12px;
+  }
+
+  .trigger-left {
+    gap: 10px;
+  }
+
+  .trigger-check {
+    width: 20px;
+    height: 20px;
+  }
+
+  .question-content {
+    padding: 16px;
+    font-size: 0.95rem;
+  }
+
+  /* Mindmaps layout on mobile */
+  .mindmaps-layout {
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .mindmaps-sidebar {
+    width: 100%;
+    padding: 8px 0;
+    height: auto;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .mindmaps-sidebar h3 {
+    display: none !important;
+  }
+
+  .mindmaps-list {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0 4px 8px 4px;
+    gap: 8px;
+    scrollbar-width: none;
+  }
+
+  .mindmaps-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mindmap-btn {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    border: 1px solid var(--border-color);
+    max-width: 200px;
+  }
+
+  .mindmap-btn span.desc {
+    display: none;
+  }
+
+  .mindmap-viewport {
+    height: 400px;
+    flex-grow: 0;
+  }
+
+  /* Quiz styling on mobile */
+  .quiz-card-wrapper {
+    padding: 16px;
+  }
+
   .quiz-info-cards {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
+
+  .quiz-question-card {
+    padding: 16px;
+  }
+
+  .quiz-question-text {
+    font-size: 1.05rem;
+  }
+
+  .option-card {
+    padding: 12px 14px;
+    font-size: 0.9rem;
+  }
+
   .results-actions {
     flex-direction: column;
+    gap: 10px;
+  }
+
+  .results-actions .btn {
+    width: 100%;
   }
 }
 
