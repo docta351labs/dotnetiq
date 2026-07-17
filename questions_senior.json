@@ -1075,10 +1075,10 @@
     {
       "q": "Which of the following service lifetimes in ASP.NET Core DI is created once per client request (connection) and is ideal for EF Core's DbContext?",
       "options": [
-        "Transient",
-        "Scoped",
-        "Singleton",
-        "Static"
+        "A) Transient",
+        "B) Scoped",
+        "C) Singleton",
+        "D) Static"
       ],
       "correctIndex": 1,
       "explanation": "Scoped lifetime services are created once per client request (connection). Since a DbContext holds state (change tracker) for entities loaded within that request, Scoped is the correct lifetime. Singleton would share the context and cause thread-safety errors, and Transient would create redundant instances."
@@ -1086,10 +1086,10 @@
     {
       "q": "A senior developer wants to build a string dynamically inside a loop that iterates 10,000 times. What is the most memory-efficient approach in C#?",
       "options": [
-        "Use standard string concatenation (+ operator).",
-        "Use string.Concat method directly.",
-        "Use StringBuilder class.",
-        "Use StringSegment from primitives."
+        "A) Use standard string concatenation (+ operator).",
+        "B) Use string.Concat method directly.",
+        "C) Use StringBuilder class.",
+        "D) Use StringSegment from primitives."
       ],
       "correctIndex": 2,
       "explanation": "Strings in C# are immutable. Concatenating strings in a loop creates a new string object on the heap for each iteration, causing high GC pressure. StringBuilder uses an internal mutable buffer, minimizing heap allocations."
@@ -1097,10 +1097,10 @@
     {
       "q": "You are querying a list of Products from a database using EF Core to display on a read-only dashboard. How can you optimize the query performance?",
       "options": [
-        "Use Lazy Loading for all product relationships.",
-        "Append .AsNoTracking() to the query.",
-        "Run GC.Collect() after the query executes.",
-        "Use a transaction wrapper around the query."
+        "A) Use Lazy Loading for all product relationships.",
+        "B) Append .AsNoTracking() to the query.",
+        "C) Run GC.Collect() after the query executes.",
+        "D) Use a transaction wrapper around the query."
       ],
       "correctIndex": 1,
       "explanation": "By default, EF Core tracks entities in memory to detect modifications. Using `.AsNoTracking()` tells EF Core to skip tracking, saving CPU cycles and memory. This is highly recommended for read-only scenarios."
@@ -1108,10 +1108,10 @@
     {
       "q": "An ASP.NET Core API is experiencing timeouts and deadlocks under heavy load. You find the code: 'var user = GetUserAsync().Result;'. What is the root cause of the starvation?",
       "options": [
-        "The database connection was closed automatically.",
-        "Sync-over-Async blocking calls block ThreadPool threads, preventing the task continuation from obtaining a thread under load.",
-        "The garbage collector has frozen all execution threads.",
-        "A compile-time warning caused the API to run in debug mode."
+        "A) The database connection was closed automatically.",
+        "B) Sync-over-Async blocking calls block ThreadPool threads, preventing the task continuation from obtaining a thread under load.",
+        "C) The garbage collector has frozen all execution threads.",
+        "D) A compile-time warning caused the API to run in debug mode."
       ],
       "correctIndex": 1,
       "explanation": "Calling `.Result` blocks the current thread. Under heavy load, all ThreadPool threads can get blocked waiting for async completions. Since the async continuations themselves require ThreadPool threads to run, a ThreadPool Starvation deadlock occurs."
@@ -1119,10 +1119,10 @@
     {
       "q": "Which C# 9 feature allows you to define lightweight, immutable data models that support value-based equality out-of-the-box?",
       "options": [
-        "struct",
-        "record",
-        "partial class",
-        "ref struct"
+        "A) struct",
+        "B) record",
+        "C) partial class",
+        "D) ref struct"
       ],
       "correctIndex": 1,
       "explanation": "A `record` is a reference type (compiled as a class) designed to represent immutable data models. It provides built-in support for value equality (comparing properties instead of memory addresses) and concise constructor syntax."
@@ -1130,10 +1130,10 @@
     {
       "q": "You are implementing CORS in your Web API. Where should you register app.UseCors() in the middleware pipeline in Program.cs?",
       "options": [
-        "At the very end of Program.cs, after app.Run()",
-        "Directly after app.UseAuthorization()",
-        "Before app.UseAuthorization() and app.UseRouting()",
-        "After app.UseRouting() but before app.UseAuthorization()"
+        "A) At the very end of Program.cs, after app.Run()",
+        "B) Directly after app.UseAuthorization()",
+        "C) Before app.UseAuthorization() and app.UseRouting()",
+        "D) After app.UseRouting() but before app.UseAuthorization()"
       ],
       "correctIndex": 3,
       "explanation": "CORS must be evaluated before authorization checks. Therefore, `app.UseCors()` should be placed after `app.UseRouting()` but before `app.UseAuthorization()` so that authorization middleware receives CORS-approved headers."
@@ -1141,10 +1141,10 @@
     {
       "q": "A senior developer wants to implement a robust unit test for a controller. What AAA pattern stands for?",
       "options": [
-        "Allocate, Act, Analyze",
-        "Arrange, Act, Assert",
-        "Assemble, Action, Answer",
-        "Audit, Adapt, Authorize"
+        "A) Allocate, Act, Analyze",
+        "B) Arrange, Act, Assert",
+        "C) Assemble, Action, Answer",
+        "D) Audit, Adapt, Authorize"
       ],
       "correctIndex": 1,
       "explanation": "AAA stands for Arrange (set up inputs/mocks), Act (execute target method), and Assert (verify outputs). It is the standard structure for readable and clean unit tests."
@@ -1152,10 +1152,10 @@
     {
       "q": "You are writing a Web API controller. How can you ensure that database queries are cancelled if the user cancels the HTTP request (e.g. closes tab)?",
       "options": [
-        "Call GC.Collect() on exception.",
-        "Inject a CancellationToken and pass it to async database queries.",
-        "Use a try/catch block with task timeout.",
-        "Set Connection Timeout to 1 second in the connection string."
+        "A) Call GC.Collect() on exception.",
+        "B) Inject a CancellationToken and pass it to async database queries.",
+        "C) Use a try/catch block with task timeout.",
+        "D) Set Connection Timeout to 1 second in the connection string."
       ],
       "correctIndex": 1,
       "explanation": "Passing a `CancellationToken` (injected in the controller parameters) to async queries (e.g., `SaveChangesAsync(cancellationToken)`) aborts the database call immediately if the HTTP connection is severed, preserving server resources."
@@ -1163,10 +1163,10 @@
     {
       "q": "Why is Structured Logging (e.g. using Serilog) preferred over Console.WriteLine in production?",
       "options": [
-        "Structured logging displays text in terminal colors.",
-        "Structured logging outputs logs as searchable JSON key-value pairs, allowing APM systems to index and query fields easily.",
-        "Console.WriteLine compiles slowly in release mode.",
-        "Structured logging automatically encrypts all database passwords in memory."
+        "A) Structured logging displays text in terminal colors.",
+        "B) Structured logging outputs logs as searchable JSON key-value pairs, allowing APM systems to index and query fields easily.",
+        "C) Console.WriteLine compiles slowly in release mode.",
+        "D) Structured logging automatically encrypts all database passwords in memory."
       ],
       "correctIndex": 1,
       "explanation": "Structured logging writes logs as JSON documents containing placeholders and properties. Log aggregators (ElasticSearch, Datadog) index these fields, allowing developers to filter logs by specific request IDs, users, or properties instantly."
@@ -1174,10 +1174,10 @@
     {
       "q": "What is the N+1 Query Problem in Entity Framework Core?",
       "options": [
-        "The database connection pool runs out of available connections.",
-        "Executing one query for a parent collection, and then a separate query for each child record in a loop, causing excessive database roundtrips.",
-        "An infinite loop caused by referencing primary keys incorrectly.",
-        "A syntax error caused by having more than one DbContext in the project."
+        "A) The database connection pool runs out of available connections.",
+        "B) Executing one query for a parent collection, and then a separate query for each child record in a loop, causing excessive database roundtrips.",
+        "C) An infinite loop caused by referencing primary keys incorrectly.",
+        "D) A syntax error caused by having more than one DbContext in the project."
       ],
       "correctIndex": 1,
       "explanation": "The N+1 problem occurs when lazy loading or nested query iteration executes separate database calls for each record. Eager loading via `.Include(...)` compiles the parent and children queries into a single SQL join query, resolving the issue."
@@ -1185,10 +1185,10 @@
     {
       "q": "How does Entity Framework Core implement Optimistic Concurrency Control to prevent overwrite conflicts?",
       "options": [
-        "By locking the database rows until the DbContext is disposed.",
-        "By using a concurrency token (like a RowVersion column) in the WHERE clause of the UPDATE statement to check if the record changed since it was loaded.",
-        "By forcing all database updates to run sequentially on a single thread.",
-        "By rollbacking the transaction only if a timeout occurs."
+        "A) By locking the database rows until the DbContext is disposed.",
+        "B) By using a concurrency token (like a RowVersion column) in the WHERE clause of the UPDATE statement to check if the record changed since it was loaded.",
+        "C) By forcing all database updates to run sequentially on a single thread.",
+        "D) By rollbacking the transaction only if a timeout occurs."
       ],
       "correctIndex": 1,
       "explanation": "EF Core uses Concurrency Tokens. When updating, it appends the concurrency token value to the SQL WHERE clause. If the row has been updated by another transaction, the token changes, the update affects 0 rows, and EF Core throws a DbUpdateConcurrencyException."
@@ -1196,10 +1196,10 @@
     {
       "q": "What are the required conventions for implementing a custom, standard middleware class in ASP.NET Core?",
       "options": [
-        "It must inherit from IMiddleware and implement InvokeAsync.",
-        "It must have a constructor accepting RequestDelegate and an Invoke/InvokeAsync method accepting HttpContext and returning Task.",
-        "It must be registered as a Scoped service in the DI container.",
-        "It must use the [Middleware] attribute and have a static Run method."
+        "A) It must inherit from IMiddleware and implement InvokeAsync.",
+        "B) It must have a constructor accepting RequestDelegate and an Invoke/InvokeAsync method accepting HttpContext and returning Task.",
+        "C) It must be registered as a Scoped service in the DI container.",
+        "D) It must use the [Middleware] attribute and have a static Run method."
       ],
       "correctIndex": 1,
       "explanation": "A conventional middleware class must accept a RequestDelegate in its constructor (representing the next middleware) and define an Invoke or InvokeAsync method that receives HttpContext and returns Task."
@@ -1207,10 +1207,10 @@
     {
       "q": "When writing asynchronous methods in a Web API, why is using 'Task.Run' inside controller actions generally discouraged?",
       "options": [
-        "To prevent the database query from failing.",
-        "Because it offloads the work to a background ThreadPool thread, wasting a thread from the web server pool without increasing actual I/O concurrency.",
-        "Because it bypasses the CORS middleware settings.",
-        "Because Task.Run can only be executed in Console applications."
+        "A) To prevent the database query from failing.",
+        "B) Because it offloads the work to a background ThreadPool thread, wasting a thread from the web server pool without increasing actual I/O concurrency.",
+        "C) Because it bypasses the CORS middleware settings.",
+        "D) Because Task.Run can only be executed in Console applications."
       ],
       "correctIndex": 1,
       "explanation": "ASP.NET Core already runs requests on ThreadPool threads. Using Task.Run just steals another thread from the same pool to run the work, adding context-switching overhead without increasing scalability. Real async I/O doesn't block any thread while waiting."
@@ -1218,10 +1218,10 @@
     {
       "q": "In C#, what is the performance impact of defining a Finalizer (Destructor) in a class?",
       "options": [
-        "It speeds up object instantiation because the GC knows how to clean it up.",
-        "It forces objects to bypass Generation 0 collection and delays their garbage collection to a later sweep because they must be placed in the finalization queue.",
-        "It causes a compilation error if the class does not implement IDisposable.",
-        "It allocates the object directly in the Large Object Heap (LOH)."
+        "A) It speeds up object instantiation because the GC knows how to clean it up.",
+        "B) It forces objects to bypass Generation 0 collection and delays their garbage collection to a later sweep because they must be placed in the finalization queue.",
+        "C) It causes a compilation error if the class does not implement IDisposable.",
+        "D) It allocates the object directly in the Large Object Heap (LOH)."
       ],
       "correctIndex": 1,
       "explanation": "Objects with finalizers require two GC cycles to be collected. In the first cycle, they are moved to the finalization queue (surviving the collection and promoted to the next generation). The finalizer thread runs, and only in a subsequent GC cycle is the memory actually freed."
@@ -1229,10 +1229,10 @@
     {
       "q": "What is the difference between a Stub and a Mock in unit testing?",
       "options": [
-        "A Stub simulates data to help tests run, while a Mock is an object that records calls and is used to assert that certain interactions occurred.",
-        "A Mock is used for integration testing, while a Stub is used for unit testing.",
-        "A Stub is created manually, while a Mock can only be created by the compiler.",
-        "There is no difference; they are synonymous terms."
+        "A) A Stub simulates data to help tests run, while a Mock is an object that records calls and is used to assert that certain interactions occurred.",
+        "B) A Mock is used for integration testing, while a Stub is used for unit testing.",
+        "C) A Stub is created manually, while a Mock can only be created by the compiler.",
+        "D) There is no difference; they are synonymous terms."
       ],
       "correctIndex": 0,
       "explanation": "Stubs are passive dependencies that provide canned answers to calls made during the test. Mocks are active dependencies where the test registers expectations of what calls should occur, and verifies those expectations during assertion."
@@ -1240,10 +1240,10 @@
     {
       "q": "What is a common performance pitfall related to LINQ's Deferred Execution in C#?",
       "options": [
-        "Deferred execution executes the query immediately, causing memory leaks.",
-        "Accidentally executing the query multiple times (Multiple Enumeration) by referencing the same IEnumerable query variable multiple times in different loops or conditions without calling .ToList() or .ToArray() first.",
-        "Deferred execution makes the database query execute synchronously on the UI thread.",
-        "LINQ queries cannot be deferred if they contain a Where clause."
+        "A) Deferred execution executes the query immediately, causing memory leaks.",
+        "B) Accidentally executing the query multiple times (Multiple Enumeration) by referencing the same IEnumerable query variable multiple times in different loops or conditions without calling .ToList() or .ToArray() first.",
+        "C) Deferred execution makes the database query execute synchronously on the UI thread.",
+        "D) LINQ queries cannot be deferred if they contain a Where clause."
       ],
       "correctIndex": 1,
       "explanation": "IEnumerable queries are not executed until iterated. If you loop over the query or call .Any() and then .First() on the same query variable, it queries the database or collection multiple times. Materializing with .ToList() prevents this."
@@ -1251,10 +1251,10 @@
     {
       "q": "Why is 'IAsyncEnumerable<T>' preferred over 'Task<List<T>>' when streaming large amounts of data from an API?",
       "options": [
-        "Because it runs faster on IIS servers.",
-        "Because it allows streaming items one by one as they become available without buffer-loading the entire list into server memory before sending the response.",
-        "Because IAsyncEnumerable automatically compresses the data using Gzip.",
-        "Because it bypasses the ASP.NET Core MVC routing table."
+        "A) Because it runs faster on IIS servers.",
+        "B) Because it allows streaming items one by one as they become available without buffer-loading the entire list into server memory before sending the response.",
+        "C) Because IAsyncEnumerable automatically compresses the data using Gzip.",
+        "D) Because it bypasses the ASP.NET Core MVC routing table."
       ],
       "correctIndex": 1,
       "explanation": "IAsyncEnumerable<T> allows yield-returning items asynchronously. The server can fetch and serialize items one by one, reducing memory usage because it doesn't need to load the complete collection into memory first."
@@ -1262,10 +1262,10 @@
     {
       "q": "In EF Core 5.0+, what is the purpose of configuring '.AsSplitQuery()' on a LINQ query?",
       "options": [
-        "To split the query execution across multiple database servers (read replicas).",
-        "To execute relationships loading in separate SQL statements, preventing the Cartesian Explosion problem caused by multiple Joins.",
-        "To split a single table query into pagination pages automatically.",
-        "To run the query on a separate background thread pool thread."
+        "A) To split the query execution across multiple database servers (read replicas).",
+        "B) To execute relationships loading in separate SQL statements, preventing the Cartesian Explosion problem caused by multiple Joins.",
+        "C) To split a single table query into pagination pages automatically.",
+        "D) To run the query on a separate background thread pool thread."
       ],
       "correctIndex": 1,
       "explanation": "When eager loading multiple collections using .Include(), EF Core generates a single SQL query with multiple JOINs, which can return a massive number of duplicate rows (Cartesian explosion). Split queries load collections in separate SQL statements to prevent this."
@@ -1273,10 +1273,10 @@
     {
       "q": "If you have a Singleton service that updates a shared cache, how should you ensure thread safety when modifying it?",
       "options": [
-        "By registering the service as Transient instead.",
-        "By using thread-safe collections like ConcurrentDictionary or synchronizing access using a SemaphoreSlim or lock statement.",
-        "By forcing the application to run on a single CPU core.",
-        "By calling GC.Collect() before every write operation."
+        "A) By registering the service as Transient instead.",
+        "B) By using thread-safe collections like ConcurrentDictionary or synchronizing access using a SemaphoreSlim or lock statement.",
+        "C) By forcing the application to run on a single CPU core.",
+        "D) By calling GC.Collect() before every write operation."
       ],
       "correctIndex": 1,
       "explanation": "Because a Singleton is shared across all threads/requests, concurrent modifications will cause race conditions and data corruption. Thread-safe collections or synchronization blocks (like lock or SemaphoreSlim) must be used to serialize writes."
@@ -1284,10 +1284,10 @@
     {
       "q": "What is a key difference between ASP.NET Core Middleware and Action Filters?",
       "options": [
-        "Middleware can only be written in Javascript, while Filters are written in C#.",
-        "Middleware operates at the HTTP request level and has no access to MVC context (Actions, ModelBinding); Action Filters run within the MVC pipeline and have access to controller contexts and action parameters.",
-        "Filters are executed before middleware in the pipeline.",
-        "Action Filters are only used for static HTML views, not APIs."
+        "A) Middleware can only be written in Javascript, while Filters are written in C#.",
+        "B) Middleware operates at the HTTP request level and has no access to MVC context (Actions, ModelBinding); Action Filters run within the MVC pipeline and have access to controller contexts and action parameters.",
+        "C) Filters are executed before middleware in the pipeline.",
+        "D) Action Filters are only used for static HTML views, not APIs."
       ],
       "correctIndex": 1,
       "explanation": "Middleware is routing-agnostic and handles low-level HTTP requests/responses. Action Filters are part of the MVC endpoint execution, running after model binding, allowing developers to inspect or modify action arguments and result values."

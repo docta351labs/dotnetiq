@@ -1075,10 +1075,10 @@
     {
       "q": "Which of the following service lifetimes in ASP.NET Core DI creates a new service instance each time it is requested from the service container?",
       "options": [
-        "Transient",
-        "Scoped",
-        "Singleton",
-        "Static"
+        "A) Transient",
+        "B) Scoped",
+        "C) Singleton",
+        "D) Static"
       ],
       "correctIndex": 0,
       "explanation": "Transient services are created each time they are requested from the service container. Scoped services are created once per request, and Singleton services are created once and shared globally."
@@ -1086,10 +1086,10 @@
     {
       "q": "Why is using StringBuilder preferred over string concatenation inside a loop?",
       "options": [
-        "StringBuilder executes on a background thread.",
-        "Strings are immutable, so concatenation creates a new string object on the heap in each iteration, causing high memory usage.",
-        "StringBuilder automatically saves values to the database.",
-        "Strings do not support Unicode characters."
+        "A) StringBuilder executes on a background thread.",
+        "B) Strings are immutable, so concatenation creates a new string object on the heap in each iteration, causing high memory usage.",
+        "C) StringBuilder automatically saves values to the database.",
+        "D) Strings do not support Unicode characters."
       ],
       "correctIndex": 1,
       "explanation": "Since strings are immutable, modifying them inside a loop creates many temporary string objects on the heap, triggering frequent garbage collection. StringBuilder modifies its internal buffer, saving allocations."
@@ -1097,10 +1097,10 @@
     {
       "q": "What is the purpose of using .AsNoTracking() in Entity Framework Core queries?",
       "options": [
-        "It deletes the entity from the database.",
-        "It turns off change tracking in EF Core, improving performance and memory usage for read-only operations.",
-        "It forces the query to bypass connection pooling.",
-        "It prevents other users from editing the database records."
+        "A) It deletes the entity from the database.",
+        "B) It turns off change tracking in EF Core, improving performance and memory usage for read-only operations.",
+        "C) It forces the query to bypass connection pooling.",
+        "D) It prevents other users from editing the database records."
       ],
       "correctIndex": 1,
       "explanation": "By default, EF Core tracks changes for all queried entities to detect updates. For read-only actions, `.AsNoTracking()` avoids this overhead, making queries faster and saving memory."
@@ -1108,10 +1108,10 @@
     {
       "q": "What is the main cause of ThreadPool Starvation when invoking asynchronous code?",
       "options": [
-        "Having too many async/await methods in the project.",
-        "Blocking threads synchronously by using .Result or .Wait() on asynchronous tasks under heavy load.",
-        "Enabling Server Garbage Collection.",
-        "Having SQL exceptions in your database connection string."
+        "A) Having too many async/await methods in the project.",
+        "B) Blocking threads synchronously by using .Result or .Wait() on asynchronous tasks under heavy load.",
+        "C) Enabling Server Garbage Collection.",
+        "D) Having SQL exceptions in your database connection string."
       ],
       "correctIndex": 1,
       "explanation": "Calling `.Result` or `.Wait()` blocks a thread pool thread synchronously. Under high load, this blocks all worker threads, preventing async continuations from running and leading to deadlock and starvation."
@@ -1119,10 +1119,10 @@
     {
       "q": "Which of the following operators returns the left-hand operand if it is not null, otherwise returns the right-hand operand?",
       "options": [
-        "?.",
-        "??",
-        "?:",
-        "??="
+        "A) ?.",
+        "B) ??",
+        "C) ?:",
+        "D) ??="
       ],
       "correctIndex": 1,
       "explanation": "The null-coalescing operator `??` provides a fallback value if the left operand is null. The null-conditional operator `?.` returns null on null evaluation, and `??=` assigns a value if null."
@@ -1130,10 +1130,10 @@
     {
       "q": "In ASP.NET Core, where should the app.UseCors() middleware be placed in Program.cs relative to authentication?",
       "options": [
-        "Before UseRouting()",
-        "After UseAuthorization()",
-        "After UseRouting() but before UseAuthorization()",
-        "At the very end of Program.cs"
+        "A) Before UseRouting()",
+        "B) After UseAuthorization()",
+        "C) After UseRouting() but before UseAuthorization()",
+        "D) At the very end of Program.cs"
       ],
       "correctIndex": 2,
       "explanation": "CORS must check origins before evaluating credentials or user roles, so `app.UseCors()` should be placed after `app.UseRouting()` but before `app.UseAuthentication()` and `app.UseAuthorization()`."
@@ -1141,10 +1141,10 @@
     {
       "q": "What is the purpose of Mocking in unit testing?",
       "options": [
-        "To test the database performance under load.",
-        "To simulate external dependencies like databases or APIs, isolating the business logic under test.",
-        "To translate C# code into Javascript automatically.",
-        "To verify the layout of the UI elements."
+        "A) To test the database performance under load.",
+        "B) To simulate external dependencies like databases or APIs, isolating the business logic under test.",
+        "C) To translate C# code into Javascript automatically.",
+        "D) To verify the layout of the UI elements."
       ],
       "correctIndex": 1,
       "explanation": "Mocks replace real system dependencies with fake implementations, allowing you to test a class's internal logic in isolation without making real database or HTTP network calls."
@@ -1152,10 +1152,10 @@
     {
       "q": "What happens if a user closes their browser tab during a long-running API call, assuming the API controller uses a CancellationToken?",
       "options": [
-        "The API database connection is kept open indefinitely.",
-        "The CancellationToken notifies the API to abort the database query or task, saving resources.",
-        "The web server crashes immediately.",
-        "The browser automatically retries the API call."
+        "A) The API database connection is kept open indefinitely.",
+        "B) The CancellationToken notifies the API to abort the database query or task, saving resources.",
+        "C) The web server crashes immediately.",
+        "D) The browser automatically retries the API call."
       ],
       "correctIndex": 1,
       "explanation": "If the client disconnects, ASP.NET Core triggers the `CancellationToken`. If passed down to the DB query or async loop, it throws a cancellation exception, aborting execution and freeing resources."
@@ -1163,10 +1163,10 @@
     {
       "q": "Which HTTP status code is returned when a user is successfully logged in, but does not have the permissions required to access a specific API resource?",
       "options": [
-        "400 Bad Request",
-        "401 Unauthorized",
-        "403 Forbidden",
-        "404 Not Found"
+        "A) 400 Bad Request",
+        "B) 401 Unauthorized",
+        "C) 403 Forbidden",
+        "D) 404 Not Found"
       ],
       "correctIndex": 2,
       "explanation": "401 indicates that the client is not authenticated (anonymous). 403 Forbidden indicates that the client is authenticated but does not possess the credentials (claims/roles) to access the resource."
@@ -1174,10 +1174,10 @@
     {
       "q": "What is the N+1 Query Problem in ORMs like EF Core?",
       "options": [
-        "When the connection pool size is exceeded by 1 connection.",
-        "When parent records are loaded in 1 query, and their child records are loaded in N separate queries in a loop, causing excessive database roundtrips.",
-        "When you have more than one primary key on a table.",
-        "When a transaction is opened but never committed."
+        "A) When the connection pool size is exceeded by 1 connection.",
+        "B) When parent records are loaded in 1 query, and their child records are loaded in N separate queries in a loop, causing excessive database roundtrips.",
+        "C) When you have more than one primary key on a table.",
+        "D) When a transaction is opened but never committed."
       ],
       "correctIndex": 1,
       "explanation": "The N+1 problem occurs when lazy-loaded properties are evaluated inside a loop. Use Eager Loading (`.Include()`) to join the tables in SQL and load the entire graph in one single query."
@@ -1185,10 +1185,10 @@
     {
       "q": "If you assign one struct variable to another in C# (e.g. 'Point a = b;'), what is copied under the hood?",
       "options": [
-        "A reference to the same object on the heap",
-        "A complete copy of the value type's data (field-by-field copy) on the stack",
-        "The compiler throws a compilation error",
-        "The memory address of the stack frame"
+        "A) A reference to the same object on the heap",
+        "B) A complete copy of the value type's data (field-by-field copy) on the stack",
+        "C) The compiler throws a compilation error",
+        "D) The memory address of the stack frame"
       ],
       "correctIndex": 1,
       "explanation": "Structs are value types. Assigning one struct to another copies the entire value field-by-field on the stack. Classes (reference types) only copy the reference (pointer) to the heap."
@@ -1196,10 +1196,10 @@
     {
       "q": "When should you prefer defining an Interface over an Abstract Class in C#?",
       "options": [
-        "When you want to define a behavior that can be implemented by multiple unrelated classes, or when you need multiple inheritance.",
-        "When you need to share code or default implementations with subclasses.",
-        "When you need to specify private fields for state storage.",
-        "When the class needs to declare static abstract members in .NET Framework 4.8."
+        "A) When you want to define a behavior that can be implemented by multiple unrelated classes, or when you need multiple inheritance.",
+        "B) When you need to share code or default implementations with subclasses.",
+        "C) When you need to specify private fields for state storage.",
+        "D) When the class needs to declare static abstract members in .NET Framework 4.8."
       ],
       "correctIndex": 0,
       "explanation": "Interfaces define capabilities that can be shared across unrelated classes and support multiple inheritance. Abstract classes are best when subclasses share common implementation or state."
@@ -1207,10 +1207,10 @@
     {
       "q": "What is the difference between the Select and SelectMany LINQ operators in C#?",
       "options": [
-        "Select filters elements, while SelectMany projects them.",
-        "Select projects each element to a new form, whereas SelectMany flattens a sequence of sequences into a single sequence.",
-        "Select only works on arrays, while SelectMany works on dictionaries.",
-        "SelectMany performs asynchronous projections while Select is synchronous."
+        "A) Select filters elements, while SelectMany projects them.",
+        "B) Select projects each element to a new form, whereas SelectMany flattens a sequence of sequences into a single sequence.",
+        "C) Select only works on arrays, while SelectMany works on dictionaries.",
+        "D) SelectMany performs asynchronous projections while Select is synchronous."
       ],
       "correctIndex": 1,
       "explanation": "Select projects each item in a collection 1-to-1. SelectMany is a flattening projection that takes a collection of collections (like a list of lists) and flattens them into a single linear sequence (1-to-many)."
@@ -1218,10 +1218,10 @@
     {
       "q": "In C#, what is the difference between writing 'throw;' and 'throw ex;' inside a catch block?",
       "options": [
-        "'throw;' terminates the thread, while 'throw ex;' continues execution.",
-        "'throw;' preserves the original call stack trace, while 'throw ex;' overwrites the stack trace, making the current catch block the origin of the exception.",
-        "'throw ex;' is faster and uses less memory than 'throw;'.",
-        "There is no difference; they compile to the exact same IL code."
+        "A) 'throw;' terminates the thread, while 'throw ex;' continues execution.",
+        "B) 'throw;' preserves the original call stack trace, while 'throw ex;' overwrites the stack trace, making the current catch block the origin of the exception.",
+        "C) 'throw ex;' is faster and uses less memory than 'throw;'.",
+        "D) There is no difference; they compile to the exact same IL code."
       ],
       "correctIndex": 1,
       "explanation": "Using throw; re-throws the existing exception while keeping the call stack intact. Using throw ex; resets the stack trace, making debugging harder because it hides where the exception originally occurred."
@@ -1229,10 +1229,10 @@
     {
       "q": "Which REST HTTP status code should a Web API controller return after successfully creating a new database resource?",
       "options": [
-        "200 OK",
-        "201 Created",
-        "202 Accepted",
-        "204 No Content"
+        "A) 200 OK",
+        "B) 201 Created",
+        "C) 202 Accepted",
+        "D) 204 No Content"
       ],
       "correctIndex": 1,
       "explanation": "REST API conventions dictate that 201 Created should be returned when a resource is successfully created, often accompanied by a Location header pointing to the new resource."
@@ -1240,10 +1240,10 @@
     {
       "q": "In C#, what does the type 'int?' represent under the hood?",
       "options": [
-        "A compiler trick that compiles to double.",
-        "An alias for the System.Nullable<int> structure, wrapping a value and a boolean flag.",
-        "A pointer to a stack-allocated integer.",
-        "A reference type wrapper stored on the heap."
+        "A) A compiler trick that compiles to double.",
+        "B) An alias for the System.Nullable<int> structure, wrapping a value and a boolean flag.",
+        "C) A pointer to a stack-allocated integer.",
+        "D) A reference type wrapper stored on the heap."
       ],
       "correctIndex": 1,
       "explanation": "int? is syntactic sugar for Nullable<int>. It is a struct (value type) containing two properties: HasValue (boolean) and Value (the underlying value of type int)."
@@ -1251,10 +1251,10 @@
     {
       "q": "What is the difference between an INNER JOIN and a LEFT JOIN in SQL?",
       "options": [
-        "INNER JOIN returns all rows from both tables, while LEFT JOIN returns only matching rows.",
-        "INNER JOIN returns only rows that have matching values in both tables, whereas LEFT JOIN returns all rows from the left table and matched rows from the right table.",
-        "LEFT JOIN is always faster because it bypasses indexes.",
-        "INNER JOIN can only be used on primary keys."
+        "A) INNER JOIN returns all rows from both tables, while LEFT JOIN returns only matching rows.",
+        "B) INNER JOIN returns only rows that have matching values in both tables, whereas LEFT JOIN returns all rows from the left table and matched rows from the right table.",
+        "C) LEFT JOIN is always faster because it bypasses indexes.",
+        "D) INNER JOIN can only be used on primary keys."
       ],
       "correctIndex": 1,
       "explanation": "An INNER JOIN requires matches in both tables to return a row. A LEFT JOIN returns all records from the left table, and the matching records from the right table (returning NULL if there is no match)."
@@ -1262,10 +1262,10 @@
     {
       "q": "What is a primary difference between merging and rebasing in Git?",
       "options": [
-        "Merging deletes the history, whereas rebasing preserves all commit IDs.",
-        "Merging combines changes by creating a new merge commit, preserving historical branches, while rebasing reapplies commits on top of another base tip, creating a flat linear history.",
-        "Rebasing can only be done on remote repositories.",
-        "Merging changes the author of all commits to the current user."
+        "A) Merging deletes the history, whereas rebasing preserves all commit IDs.",
+        "B) Merging combines changes by creating a new merge commit, preserving historical branches, while rebasing reapplies commits on top of another base tip, creating a flat linear history.",
+        "C) Rebasing can only be done on remote repositories.",
+        "D) Merging changes the author of all commits to the current user."
       ],
       "correctIndex": 1,
       "explanation": "Merging preserves the exact chronological branch history with a merge commit. Rebasing rewrites history by moving the base of a branch to another commit, resulting in a cleaner linear commit timeline but rewriting commit hashes."
@@ -1273,10 +1273,10 @@
     {
       "q": "Which of the following is the best practical application of the Single Responsibility Principle (SRP)?",
       "options": [
-        "A class should contain only one method.",
-        "A class should have only one reason to change, meaning it handles one cohesive feature or responsibility.",
-        "All services in an application should inherit from a single base class.",
-        "A controller should handle routing, database queries, and business logic to avoid file sprawl."
+        "A) A class should contain only one method.",
+        "B) A class should have only one reason to change, meaning it handles one cohesive feature or responsibility.",
+        "C) All services in an application should inherit from a single base class.",
+        "D) A controller should handle routing, database queries, and business logic to avoid file sprawl."
       ],
       "correctIndex": 1,
       "explanation": "SRP means a class should have one focused responsibility. If a class handles database access, formatting, and emailing, it has multiple reasons to change and should be split."
@@ -1284,10 +1284,10 @@
     {
       "q": "How does ASP.NET Core determine which environment configuration files (e.g. appsettings.Development.json) to load?",
       "options": [
-        "By reading the computer's CPU manufacturer.",
-        "By checking the value of the 'ASPNETCORE_ENVIRONMENT' environment variable (e.g. Development, Production).",
-        "By checking the current system time.",
-        "By checking if the web browser is Chrome or Edge."
+        "A) By reading the computer's CPU manufacturer.",
+        "B) By checking the value of the 'ASPNETCORE_ENVIRONMENT' environment variable (e.g. Development, Production).",
+        "C) By checking the current system time.",
+        "D) By checking if the web browser is Chrome or Edge."
       ],
       "correctIndex": 1,
       "explanation": "The runtime reads the ASPNETCORE_ENVIRONMENT environment variable. If set to Development, it loads appsettings.Development.json overriding base configurations."

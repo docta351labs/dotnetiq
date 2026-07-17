@@ -1075,10 +1075,10 @@
     {
       "q": "You are experiencing CPU spikes and performance degradation on a high-throughput ASP.NET Core API on Linux. After running dotnet-dump and analyzing the heap, you notice a massive count of Gen 0/1 Garbage Collections. What is the most likely cause of this performance bottleneck?",
       "options": [
-        "Workstation Garbage Collection is enabled, restricting GC to a single thread under multi-core workloads.",
-        "High frequency allocation of temporary, short-lived large objects (e.g. buffers >= 85KB) causing LOH fragmentation and constant GC sweeps.",
-        "Sync-over-async blocking calls like Task.Wait() or .Result causing ThreadPool starvation and thread creation overhead.",
-        "The database connection pool is exhausted, causing the EF Core DbContext to keep large object graphs in memory."
+        "A) Workstation Garbage Collection is enabled, restricting GC to a single thread under multi-core workloads.",
+        "B) High frequency allocation of temporary, short-lived large objects (e.g. buffers >= 85KB) causing LOH fragmentation and constant GC sweeps.",
+        "C) Sync-over-async blocking calls like Task.Wait() or .Result causing ThreadPool starvation and thread creation overhead.",
+        "D) The database connection pool is exhausted, causing the EF Core DbContext to keep large object graphs in memory."
       ],
       "correctIndex": 1,
       "explanation": "Allocating temporary objects >= 85,000 bytes places them directly in the Large Object Heap (LOH). Because the LOH is not compacted by default (relocating large chunks is expensive), it fragments. This triggers frequent full-sweep GC collections (Gen 2 / LOH), consuming massive CPU. Using `ArrayPool<T>` resolves this by recycling buffers."
@@ -1086,10 +1086,10 @@
     {
       "q": "A developer is writing a high-frequency parsing method in C# and wants to process substrings without allocating heap memory. Which of the following designs is valid and maximizes performance?",
       "options": [
-        "Return StringSegment from Microsoft.Extensions.Primitives which wraps the string and provides slicing.",
-        "Use ReadOnlySpan<char> by calling string.AsSpan() and slicing it, keeping it inside ref struct methods.",
-        "Convert the string to a char[] and store it inside a ThreadLocal<char[]> cache.",
-        "Use Memory<char> as a private readonly field in a Singleton service to slice substrings asynchronously."
+        "A) Return StringSegment from Microsoft.Extensions.Primitives which wraps the string and provides slicing.",
+        "B) Use ReadOnlySpan<char> by calling string.AsSpan() and slicing it, keeping it inside ref struct methods.",
+        "C) Convert the string to a char[] and store it inside a ThreadLocal<char[]> cache.",
+        "D) Use Memory<char> as a private readonly field in a Singleton service to slice substrings asynchronously."
       ],
       "correctIndex": 1,
       "explanation": "`ReadOnlySpan<char>` represents a contiguous region of arbitrary memory. Calling `.AsSpan()` and slicing it does NOT allocate a new string on the heap, it simply creates a new Span pointing to a window of the existing string on the stack. Because it is a `ref struct`, it is guaranteed to only live on the stack."
@@ -1097,10 +1097,10 @@
     {
       "q": "You have a high-traffic microservice that frequently executes an async method. In >95% of cases, the data is already in the local cache, allowing the method to complete synchronously. What is the most memory-efficient return type for this method?",
       "options": [
-        "Task<T>, because modern .NET runtime automatically caches all Task instances.",
-        "ValueTask<T>, because it is a struct that avoids heap allocation when the task completes synchronously.",
-        "TaskCompletionSource<T>, because it allows completing the task manually in a thread-safe manner.",
-        "IAsyncEnumerable<T>, because it compiles to a state machine that streams the cached results."
+        "A) Task<T>, because modern .NET runtime automatically caches all Task instances.",
+        "B) ValueTask<T>, because it is a struct that avoids heap allocation when the task completes synchronously.",
+        "C) TaskCompletionSource<T>, because it allows completing the task manually in a thread-safe manner.",
+        "D) IAsyncEnumerable<T>, because it compiles to a state machine that streams the cached results."
       ],
       "correctIndex": 1,
       "explanation": "`ValueTask<T>` is a value type struct. When a method returns `ValueTask<T>` and completes synchronously, it does not allocate any object on the managed heap. If it completes asynchronously, it will allocate the internal `Task` object. For hot-paths where cache hits are high (>90%), this reduces heap allocations to near-zero."
@@ -1108,10 +1108,10 @@
     {
       "q": "An ASP.NET Core Web API is experiencing random timeouts and hanging requests under heavy load. Checking the logs, you find lock contention and the thread pool size reaching its hard limit. You find this code: 'var data = FetchDataAsync().Result;'. What is happening under the hood?",
       "options": [
-        "Memory leak in the FetchDataAsync method is exhausting the heap, causing the GC to freeze all threads.",
-        "The JIT compiler is deadlocking because it cannot compile FetchDataAsync while the main thread is blocked.",
-        "Sync-over-Async blocking: Thread A blocks on .Result while waiting for the async continuation, which is queued to the ThreadPool. Under load, all ThreadPool threads get blocked, causing starvation.",
-        "The connection pool of the SQL Server database is exhausted, causing the thread to block indefinitely."
+        "A) Memory leak in the FetchDataAsync method is exhausting the heap, causing the GC to freeze all threads.",
+        "B) The JIT compiler is deadlocking because it cannot compile FetchDataAsync while the main thread is blocked.",
+        "C) Sync-over-Async blocking: Thread A blocks on .Result while waiting for the async continuation, which is queued to the ThreadPool. Under load, all ThreadPool threads get blocked, causing starvation.",
+        "D) The connection pool of the SQL Server database is exhausted, causing the thread to block indefinitely."
       ],
       "correctIndex": 2,
       "explanation": "Calling `.Result` or `.Wait()` blocks the current thread until the async task completes. In a multithreaded application like ASP.NET Core, the async continuation needs a ThreadPool thread to run. If all ThreadPool threads are blocked waiting for their respective tasks to complete, no threads are available to run the continuations, creating a classic ThreadPool Starvation deadlock."
@@ -1119,10 +1119,10 @@
     {
       "q": "You are configuring the database architecture for a multi-tenant .NET SaaS application. Security requires strict tenant data isolation, but budget requires minimizing database costs. What isolation strategy in EF Core balances both requirements?",
       "options": [
-        "Separate Databases: Route each request to a different tenant connection string via a custom IDbContextFactory.",
-        "Shared Database, Separate Schemas: Dynamically map schemas in DbContext.OnModelCreating using tenant claims.",
-        "Shared Database, Shared Schema: Apply a Global Query Filter in EF Core matching the tenant ID, combined with Tenant DbContext pooling.",
-        "Bypass EF Core and use ADO.NET with parameterized queries containing the tenant ID in every SQL command."
+        "A) Separate Databases: Route each request to a different tenant connection string via a custom IDbContextFactory.",
+        "B) Shared Database, Separate Schemas: Dynamically map schemas in DbContext.OnModelCreating using tenant claims.",
+        "C) Shared Database, Shared Schema: Apply a Global Query Filter in EF Core matching the tenant ID, combined with Tenant DbContext pooling.",
+        "D) Bypass EF Core and use ADO.NET with parameterized queries containing the tenant ID in every SQL command."
       ],
       "correctIndex": 2,
       "explanation": "Applying a Global Query Filter (`HasQueryFilter(e => e.TenantId == _tenantProvider.TenantId)`) inside EF Core ensures that all queries automatically append `WHERE TenantId = @tenantId`. This is cost-efficient (single database) and secure (developers cannot forget to filter). Combining it with DbContext Pooling maximizes throughput."
@@ -1130,10 +1130,10 @@
     {
       "q": "During a code review, you notice a developer has injected a Scoped DbContext instance into a Singleton BackgroundService. What is the main architectural risk of this design?",
       "options": [
-        "A compiler error because scoped services cannot be resolved in Singleton constructors.",
-        "Concurrency issues and memory growth, as DbContext is not thread-safe and the change tracker will keep all tracked entities in memory forever.",
-        "The BackgroundService will fail to start because it runs on a separate thread pool thread without HTTP context.",
-        "Database connections will leak and remain open, leading to SQL Server connection pool exhaustion in minutes."
+        "A) A compiler error because scoped services cannot be resolved in Singleton constructors.",
+        "B) Concurrency issues and memory growth, as DbContext is not thread-safe and the change tracker will keep all tracked entities in memory forever.",
+        "C) The BackgroundService will fail to start because it runs on a separate thread pool thread without HTTP context.",
+        "D) Database connections will leak and remain open, leading to SQL Server connection pool exhaustion in minutes."
       ],
       "correctIndex": 1,
       "explanation": "`DbContext` is NOT thread-safe and is designed to be short-lived. Injecting it directly into a Singleton means the same DbContext instance is shared across all executions of the background service. If multiple threads run, it throws concurrency exceptions. Furthermore, since the DbContext lives as long as the Singleton (lifetime of the app), its Change Tracker will grow indefinitely, causing a memory leak."
@@ -1141,10 +1141,10 @@
     {
       "q": "You are designing a distributed system where Microservice A publishes a 'UserCreated' event, and Microservice B must consume it and update its database. How do you guarantee that Microservice A publishes the event only if its local database transaction commits successfully, without using distributed transactions?",
       "options": [
-        "Publish the event inside a try/catch block. If the publish throws an exception, rollback the DB transaction.",
-        "Implement the Outbox Pattern: Save both the user data and the event payload to an Outbox table in the same local DB transaction, then process the outbox asynchronously.",
-        "Use Two-Phase Commit (2PC) protocol via MSDTC to coordinate the SQL Server database and the RabbitMQ broker.",
-        "Publish the event first. If the broker confirms receipt, commit the database transaction."
+        "A) Publish the event inside a try/catch block. If the publish throws an exception, rollback the DB transaction.",
+        "B) Implement the Outbox Pattern: Save both the user data and the event payload to an Outbox table in the same local DB transaction, then process the outbox asynchronously.",
+        "C) Use Two-Phase Commit (2PC) protocol via MSDTC to coordinate the SQL Server database and the RabbitMQ broker.",
+        "D) Publish the event first. If the broker confirms receipt, commit the database transaction."
       ],
       "correctIndex": 1,
       "explanation": "The Outbox Pattern ensures atomicity. By saving the event payload in an `Outbox` table in the *same* database transaction as the entity update, you guarantee that either both succeed or both fail. A background worker then reads from the Outbox table and publishes to the broker, ensuring at-least-once delivery without distributed transactions."
@@ -1152,10 +1152,10 @@
     {
       "q": "You are implementing a high-concurrency background processor in .NET that routes incoming log data to a single writer. You want to avoid thread blocking and minimize allocations. Which synchronization mechanism is best suited?",
       "options": [
-        "BlockingCollection<T>, because it is thread-safe and implements the Producer-Consumer pattern out of the box.",
-        "System.Threading.Channels, because it is async-first, uses ValueTasks to avoid allocations, and supports configuring SingleWriter/SingleReader.",
-        "SemaphoreSlim, using Wait() and Release() inside a lock block to coordinate threads.",
-        "ConcurrentQueue<T> in a while(true) loop that sleeps for 10ms when the queue is empty."
+        "A) BlockingCollection<T>, because it is thread-safe and implements the Producer-Consumer pattern out of the box.",
+        "B) System.Threading.Channels, because it is async-first, uses ValueTasks to avoid allocations, and supports configuring SingleWriter/SingleReader.",
+        "C) SemaphoreSlim, using Wait() and Release() inside a lock block to coordinate threads.",
+        "D) ConcurrentQueue<T> in a while(true) loop that sleeps for 10ms when the queue is empty."
       ],
       "correctIndex": 1,
       "explanation": "`System.Threading.Channels` is designed specifically for high-throughput, async-first pipelines. Unlike `BlockingCollection` which blocks OS threads, `Channels` exposes async methods (`WriteAsync`, `ReadAllAsync`) using `ValueTask` to minimize allocations. Configuring `SingleWriter = true` enables compiler micro-optimizations."
@@ -1163,10 +1163,10 @@
     {
       "q": "Which C# 12 feature has a hidden risk of capturing mutable constructor parameters as compiler-generated fields, potentially causing side effects or memory retention?",
       "options": [
-        "Primary Constructors on classes.",
-        "Required Properties with SetsRequiredMembers attribute.",
-        "Collection Expressions with spread operator.",
-        "Ref fields inside ref structs."
+        "A) Primary Constructors on classes.",
+        "B) Required Properties with SetsRequiredMembers attribute.",
+        "C) Collection Expressions with spread operator.",
+        "D) Ref fields inside ref structs."
       ],
       "correctIndex": 0,
       "explanation": "Primary Constructors on classes allow accessing parameters anywhere in the class body. If a parameter is referenced in a method, the compiler generates a private field to capture it. Unlike traditional constructors where you assign to `private readonly` fields, captured parameters are *mutable* and can be re-assigned, and can cause memory leaks if captured in closures."
@@ -1174,10 +1174,10 @@
     {
       "q": "You are upgrading a legacy ASP.NET Web API (.NET Framework 4.8) to .NET 9. The system must remain fully operational in production during migration. What is the recommended strategy?",
       "options": [
-        "Big Bang Migration: Stop production, upgrade all projects to SDK-style, and deploy the entire .NET 9 codebase.",
-        "Write a converter script in PowerShell to translate MVC controllers to Minimal APIs automatically.",
-        "Strangler Fig Pattern: Place YARP in front of the legacy app, and gradually route rewritten endpoints to the new .NET 9 microservice.",
-        "Run the legacy WebForms application inside a Linux Docker container using Mono runtime."
+        "A) Big Bang Migration: Stop production, upgrade all projects to SDK-style, and deploy the entire .NET 9 codebase.",
+        "B) Write a converter script in PowerShell to translate MVC controllers to Minimal APIs automatically.",
+        "C) Strangler Fig Pattern: Place YARP in front of the legacy app, and gradually route rewritten endpoints to the new .NET 9 microservice.",
+        "D) Run the legacy WebForms application inside a Linux Docker container using Mono runtime."
       ],
       "correctIndex": 2,
       "explanation": "The Strangler Fig Pattern allows incremental migration. By placing YARP (Yet Another Reverse Proxy) as an API Gateway, it routes traffic to the legacy app by default. As endpoints are rewritten in .NET 9, YARP is updated to route those paths to the new app. This minimizes risk and avoids outages."
@@ -1185,10 +1185,10 @@
     {
       "q": "In a microservice architecture using CQRS, how do you handle data synchronization between the write database and the read database (read model) with eventual consistency?",
       "options": [
-        "Use distributed transactions (2PC) to write to both databases simultaneously.",
-        "Publish integration events from the write side to a message broker (e.g. RabbitMQ/Kafka) which are consumed by the read side to update its cache/store asynchronously.",
-        "Use a shared Entity Framework DbContext with two different connection strings.",
-        "Configure the SQL database to run in Read Uncommitted isolation level globally."
+        "A) Use distributed transactions (2PC) to write to both databases simultaneously.",
+        "B) Publish integration events from the write side to a message broker (e.g. RabbitMQ/Kafka) which are consumed by the read side to update its cache/store asynchronously.",
+        "C) Use a shared Entity Framework DbContext with two different connection strings.",
+        "D) Configure the SQL database to run in Read Uncommitted isolation level globally."
       ],
       "correctIndex": 1,
       "explanation": "Eventual consistency in CQRS is typically achieved by publishing integration events to a message broker when the write side processes a state-changing command. A consumer on the read side receives the event and updates the read model asynchronously, decoupling write throughput from read scaling."
@@ -1196,10 +1196,10 @@
     {
       "q": "What is the primary architectural difference between a Retry Pattern and a Circuit Breaker Pattern when implementing client resiliency?",
       "options": [
-        "Retry protects the client from memory leaks; Circuit Breaker protects the database from unauthorized queries.",
-        "Retry attempts to execute the operation again hoping a transient error resolves; Circuit Breaker detects that a downstream service is failing and immediately fails subsequent requests without calling the service, preventing resource exhaustion.",
-        "Retry is synchronous while Circuit Breaker is asynchronous.",
-        "Circuit Breaker is only used for caching, while Retry is used for databases."
+        "A) Retry protects the client from memory leaks; Circuit Breaker protects the database from unauthorized queries.",
+        "B) Retry attempts to execute the operation again hoping a transient error resolves; Circuit Breaker detects that a downstream service is failing and immediately fails subsequent requests without calling the service, preventing resource exhaustion.",
+        "C) Retry is synchronous while Circuit Breaker is asynchronous.",
+        "D) Circuit Breaker is only used for caching, while Retry is used for databases."
       ],
       "correctIndex": 1,
       "explanation": "Retry is for handling transient, self-healing errors (like network blips). Circuit Breaker is for avoiding cascading failures: it tracks failure rates and 'opens' the circuit to prevent the client from sending futile requests to an already overloaded or crashed dependency, giving it time to recover."
@@ -1207,10 +1207,10 @@
     {
       "q": "In .NET, how does Server Garbage Collection (Server GC) differ from Workstation Garbage Collection in terms of resource utilization and throughput?",
       "options": [
-        "Server GC uses a single thread for all collection, while Workstation GC allocates a thread per CPU core.",
-        "Server GC creates one GC heap and one GC thread per logical CPU core, maximizing throughput for multi-core server applications at the cost of higher base memory usage; Workstation GC uses a single heap and thread to minimize resource usage.",
-        "Server GC is only compatible with Windows Server OS, while Workstation GC only runs on Windows 10/11.",
-        "Server GC disables Generation 2 collections to avoid stop-the-world pauses."
+        "A) Server GC uses a single thread for all collection, while Workstation GC allocates a thread per CPU core.",
+        "B) Server GC creates one GC heap and one GC thread per logical CPU core, maximizing throughput for multi-core server applications at the cost of higher base memory usage; Workstation GC uses a single heap and thread to minimize resource usage.",
+        "C) Server GC is only compatible with Windows Server OS, while Workstation GC only runs on Windows 10/11.",
+        "D) Server GC disables Generation 2 collections to avoid stop-the-world pauses."
       ],
       "correctIndex": 1,
       "explanation": "Server GC is optimized for high-throughput server workloads. It parallelizes collections across multiple threads (one per CPU core) and uses separate heaps. Workstation GC is optimized for UI responsiveness and low memory footprint on client machines."
@@ -1218,10 +1218,10 @@
     {
       "q": "In a distributed system, how does the Cache-Aside (Lazy Loading) caching strategy operate under the hood?",
       "options": [
-        "The cache is placed between the application and the database; all database writes are intercepted by the cache first.",
-        "The application checks the cache; if a hit occurs, it returns the data. If a miss occurs, it queries the database, writes the result to the cache, and returns it to the client. Writes update the database directly.",
-        "The cache automatically queries the database on a cron schedule to keep itself updated.",
-        "The application only writes to the cache, and a background thread eventually syncs to the database."
+        "A) The cache is placed between the application and the database; all database writes are intercepted by the cache first.",
+        "B) The application checks the cache; if a hit occurs, it returns the data. If a miss occurs, it queries the database, writes the result to the cache, and returns it to the client. Writes update the database directly.",
+        "C) The cache automatically queries the database on a cron schedule to keep itself updated.",
+        "D) The application only writes to the cache, and a background thread eventually syncs to the database."
       ],
       "correctIndex": 1,
       "explanation": "Cache-Aside is the most common strategy. The application manages both the cache and the database. If cache misses, the app fetches from the DB and writes back to cache. This is simple and resilient to cache provider outages, but can lead to stale data if database updates aren't handled."
@@ -1229,10 +1229,10 @@
     {
       "q": "Why is the Backend-for-Frontend (BFF) security pattern preferred over storing JWT access tokens directly in single-page applications (SPAs)?",
       "options": [
-        "Because JWTs cannot be parsed in modern browsers.",
-        "To protect the application from Cross-Site Scripting (XSS) attacks by keeping the sensitive JWT tokens server-side in the BFF, using secure, HttpOnly, SameSite cookies for browser-to-BFF session management.",
-        "Because BFF runs faster than JWT token generation.",
-        "BFF automatically encrypts all HTTP traffic using SSL/TLS."
+        "A) Because JWTs cannot be parsed in modern browsers.",
+        "B) To protect the application from Cross-Site Scripting (XSS) attacks by keeping the sensitive JWT tokens server-side in the BFF, using secure, HttpOnly, SameSite cookies for browser-to-BFF session management.",
+        "C) Because BFF runs faster than JWT token generation.",
+        "D) BFF automatically encrypts all HTTP traffic using SSL/TLS."
       ],
       "correctIndex": 1,
       "explanation": "Storing JWTs in local storage or memory in an SPA exposes them to XSS attacks (malicious scripts stealing the token). The BFF pattern handles authentication on a server-side gateway, keeps the tokens in secure server-side session state, and talks to the SPA using encrypted, HttpOnly cookies."
@@ -1240,10 +1240,10 @@
     {
       "q": "How does the Token Bucket rate limiting algorithm handle traffic spikes differently from the Fixed Window algorithm?",
       "options": [
-        "Token Bucket blocks all requests during a spike, while Fixed Window allows them.",
-        "Token Bucket allows spikes up to the bucket capacity by accumulating tokens during idle times, whereas Fixed Window can suffer from a 'double limit' traffic burst at the window boundaries.",
-        "Fixed Window uses a sliding log that takes zero memory.",
-        "Token Bucket is only implemented client-side."
+        "A) Token Bucket blocks all requests during a spike, while Fixed Window allows them.",
+        "B) Token Bucket allows spikes up to the bucket capacity by accumulating tokens during idle times, whereas Fixed Window can suffer from a 'double limit' traffic burst at the window boundaries.",
+        "C) Fixed Window uses a sliding log that takes zero memory.",
+        "D) Token Bucket is only implemented client-side."
       ],
       "correctIndex": 1,
       "explanation": "Token Bucket fills tokens at a constant rate up to a max capacity, enabling bursty traffic if the bucket is full. Fixed Window resets limits at fixed intervals, which allows double the rate limit within a short interval surrounding the boundary (e.g., limit of 100/min allowing 100 at 0:59 and 100 at 1:00)."
@@ -1251,10 +1251,10 @@
     {
       "q": "In Domain-Driven Design (DDD), what is the key rule regarding transactional boundaries and Aggregates?",
       "options": [
-        "An aggregate should contain all tables of the database.",
-        "A single database transaction should only modify and commit a single Aggregate root at a time, using eventual consistency (events) to update other Aggregates.",
-        "All aggregates must be saved in the same memory cache.",
-        "Aggregates should never contain business logic, only data properties."
+        "A) An aggregate should contain all tables of the database.",
+        "B) A single database transaction should only modify and commit a single Aggregate root at a time, using eventual consistency (events) to update other Aggregates.",
+        "C) All aggregates must be saved in the same memory cache.",
+        "D) Aggregates should never contain business logic, only data properties."
       ],
       "correctIndex": 1,
       "explanation": "Aggregates represent consistency boundaries. To maintain high concurrency and clean boundaries, a single transaction should only update and save one aggregate instance. Updates to other aggregates should be handled asynchronously via domain events."
@@ -1262,10 +1262,10 @@
     {
       "q": "In an Event Sourced system, what is the role of an 'Upcaster' in handling schema evolution of events over time?",
       "options": [
-        "It archives old events to long-term storage.",
-        "It translates legacy event JSON structures into the new class schemas dynamically during the read/replay process, before they reach the aggregate.",
-        "It rewrites the historical database log to replace old events with new versions.",
-        "It compiles C# classes into SQL schema migrations."
+        "A) It archives old events to long-term storage.",
+        "B) It translates legacy event JSON structures into the new class schemas dynamically during the read/replay process, before they reach the aggregate.",
+        "C) It rewrites the historical database log to replace old events with new versions.",
+        "D) It compiles C# classes into SQL schema migrations."
       ],
       "correctIndex": 1,
       "explanation": "Event store history is immutable and cannot be edited. When the schema of an event changes (e.g. adding a property), an Upcaster intercepts old event payloads read from the database and maps/transforms them to the new schema format in memory before they are replayed."
@@ -1273,10 +1273,10 @@
     {
       "q": "What is SIMD (Single Instruction, Multiple Data) in C# and how is it used for micro-optimizations?",
       "options": [
-        "It compiles C# to run on GPU cores using WebGL.",
-        "It uses CPU vector registers (via Vector<T> or Vector128) to perform the same mathematical operation on multiple data elements in parallel in a single CPU cycle, improving throughput of arithmetic/data processing loops.",
-        "It runs the garbage collector concurrently with the app thread.",
-        "It automatically slices large arrays into Span<T> buffers."
+        "A) It compiles C# to run on GPU cores using WebGL.",
+        "B) It uses CPU vector registers (via Vector<T> or Vector128) to perform the same mathematical operation on multiple data elements in parallel in a single CPU cycle, improving throughput of arithmetic/data processing loops.",
+        "C) It runs the garbage collector concurrently with the app thread.",
+        "D) It automatically slices large arrays into Span<T> buffers."
       ],
       "correctIndex": 1,
       "explanation": "SIMD enables data-level parallelism at the hardware level. Instead of adding array elements one-by-one in a loop, .NET System.Numerics.Vector<T> performs the operations on blocks of 4, 8, or 16 numbers simultaneously, greatly boosting performance in math or search-heavy hot paths."
@@ -1284,10 +1284,10 @@
     {
       "q": "How does gRPC under HTTP/3 improve multiplexing compared to gRPC under HTTP/2?",
       "options": [
-        "HTTP/3 uses TLS 1.2 which is faster than TLS 1.3.",
-        "HTTP/3 uses UDP-based QUIC, which resolves the TCP head-of-line blocking problem; a dropped packet on one stream does not block unrelated active streams.",
-        "HTTP/3 automatically serializes payloads using XML instead of Protobuf.",
-        "HTTP/3 does not require an active network connection."
+        "A) HTTP/3 uses TLS 1.2 which is faster than TLS 1.3.",
+        "B) HTTP/3 uses UDP-based QUIC, which resolves the TCP head-of-line blocking problem; a dropped packet on one stream does not block unrelated active streams.",
+        "C) HTTP/3 automatically serializes payloads using XML instead of Protobuf.",
+        "D) HTTP/3 does not require an active network connection."
       ],
       "correctIndex": 1,
       "explanation": "HTTP/2 multiplexes streams over a single TCP connection. However, if a packet is lost, TCP pauses the entire connection (head-of-line blocking) until the packet is retransmitted, affecting all streams. HTTP/3 runs on top of QUIC (UDP), where streams are independent; packet loss on one stream does not stall the others."
